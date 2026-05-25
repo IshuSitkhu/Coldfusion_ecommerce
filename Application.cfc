@@ -8,7 +8,7 @@
     <!--- Enable session  --->
     <cfset this.sessionManagement = true>
 
-    <!-- Session timeout (2 hours) -->
+    <!--- Session timeout (2 hours) --->
     <cfset this.sessionTimeout = createTimeSpan(0, 2, 0, 0)>
 
     <cffunction name="onApplicationStart" returnType="boolean">
@@ -19,7 +19,7 @@
 
         <cfargument name="targetPage">
 
-        <!-- <cfoutput>App Started</cfoutput> -->
+
 
     </cffunction>
 
