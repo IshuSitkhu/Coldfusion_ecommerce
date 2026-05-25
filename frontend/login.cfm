@@ -80,7 +80,7 @@ $("#loginForm").submit(function(e){
 
             let status = res.status ?? res.STATUS;
             let message = res.message ?? res.MESSAGE;
-            let role = res.role;
+            let role = res.ROLE;
 
             if(status === true){
 
@@ -100,7 +100,10 @@ $("#loginForm").submit(function(e){
                     else if(role == "seller"){
                         window.location.href = "seller/dashboard.cfm";
                     }
-                    else{
+                    else if(role == "customer"){
+                        window.location.href = "customer/dashboard.cfm";
+                    }
+                    else {
                         window.location.href = "customer/dashboard.cfm";
                     }
 
