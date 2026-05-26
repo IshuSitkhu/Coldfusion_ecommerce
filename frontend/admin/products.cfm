@@ -241,11 +241,28 @@ function toggleStatus(id){
 
         success: function(res){
 
-            if(res.status){
-                Swal.fire("Success", res.message, "success");
+            console.log("TOGGLE RESPONSE:", res);
+
+            let status = res.STATUS;  
+            let message = res.MESSAGE;
+
+            if(status === true || status === "true"){
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: message
+                });
+
                 loadProducts();
+
             } else {
-                Swal.fire("Error", res.message, "error");
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed",
+                    text: message || "Something went wrong"
+                });
             }
         },
 

@@ -202,6 +202,7 @@
 
     <cftry>
 
+        <!--- CLEAN QUERY --->
         <cfquery name="qProducts" datasource="ecommerce">
             SELECT 
                 p.product_id,
@@ -211,10 +212,12 @@
                 p.stock,
                 p.status,
                 p.created_at,
+                p.seller_id,
                 u.username AS seller_name
             FROM products p
-            INNER JOIN users u ON p.seller_id = u.user_id
-            WHERE 1=1
+            INNER JOIN users u 
+                ON p.seller_id = u.user_id
+            ORDER BY p.created_at DESC
         </cfquery>
 
         <cfset var filteredData = []>
@@ -223,10 +226,12 @@
 
             <cfset var includeRow = true>
 
-            <cfif arguments.seller_id NEQ "" AND qProducts.seller_id NEQ arguments.seller_id>
+            <!--- SELLER FILTER --->
+            <cfif arguments.seller_id NEQ "" AND val(qProducts.seller_id) NEQ val(arguments.seller_id)>
                 <cfset includeRow = false>
             </cfif>
 
+            <!--- STATUS FILTER --->
             <cfif arguments.filter EQ "active" AND qProducts.status NEQ "active">
                 <cfset includeRow = false>
             </cfif>
@@ -235,7 +240,6 @@
                 <cfset includeRow = false>
             </cfif>
 
-            <!--- out of stock --->
             <cfif arguments.filter EQ "outofstock" AND qProducts.stock GT 0>
                 <cfset includeRow = false>
             </cfif>
@@ -266,7 +270,6 @@
             </cfif>
         </cfif>
 
-        <!--- FINAL RESPONSE --->
         <cfset result.status = true>
         <cfset result.data = filteredData>
         <cfset result.count = arrayLen(filteredData)>
@@ -275,6 +278,44 @@
         <cfset result.status = false>
         <cfset result.message = cfcatch.message>
         <cfset result.detail = cfcatch.detail>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
+<cffunction name="toggleStatus" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="product_id" required="true">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <!--- GET CURRENT STATUS --->
+        <cfquery name="q" datasource="ecommerce">
+            SELECT status
+            FROM products
+            WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+
+        <!--- TOGGLE VALUE --->
+        <cfset var newStatus = (q.status EQ "active") ? "inactive" : "active">
+
+        <cfquery datasource="ecommerce">
+            UPDATE products
+            SET status = <cfqueryparam value="#newStatus#" cfsqltype="cf_sql_varchar">
+            WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+
+        <cfset result.status = true>
+        <cfset result.message = "Status updated to " & newStatus>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
     </cfcatch>
 
     </cftry>
