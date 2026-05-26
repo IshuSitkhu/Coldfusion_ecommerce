@@ -42,8 +42,9 @@
                         <input type="number" name="stock" class="form-control mb-2" placeholder="Stock" required>
 
                         <textarea name="description" class="form-control mb-2" placeholder="Description"></textarea>
+                        <input type="hidden" id="product_id" name="product_id" value="">
 
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" id="formBtn" class="btn btn-primary w-100">
                             Add Product
                         </button>
 
@@ -108,7 +109,6 @@ function loadProducts(){
 
         success: function(res){
 
-            // FIX: ColdFusion returns uppercase keys
             let status = res.STATUS;
             let data = res.DATA;
 
@@ -140,6 +140,17 @@ function loadProducts(){
                             <span class="badge bg-success">${item.STATUS}</span>
                         </td>
                         <td>
+                        <button class="btn btn-primary btn-sm"
+                            onclick="editProduct(
+                                ${item.PRODUCT_ID},
+                                '${item.PRODUCT_NAME}',
+                                '${item.CATEGORY}',
+                                ${item.PRICE},
+                                ${item.STOCK},
+                                '${item.DESCRIPTION || ""}'
+                            )">
+                            Edit
+                        </button>
                             <button class="btn btn-danger btn-sm" onclick="deleteProduct(${item.PRODUCT_ID})">
                                 Delete
                             </button>
@@ -167,8 +178,18 @@ $("#productForm").submit(function(e){
 
     e.preventDefault();
 
+    let id = $("#product_id").val();
+
+    let url = "";
+
+    if(id === "" || id === null){
+        url = "/ecommerce/api/Product.cfc?method=addProduct";
+    } else {
+        url = "/ecommerce/api/Product.cfc?method=updateProduct";
+    }
+
     $.ajax({
-        url: "/ecommerce/api/Product.cfc?method=addProduct",
+        url: url,
         type: "POST",
         data: $(this).serialize(),
         dataType: "json",
@@ -185,6 +206,9 @@ $("#productForm").submit(function(e){
                 });
 
                 $("#productForm")[0].reset();
+                $("#product_id").val("");
+                $("#formBtn").text("Add Product");
+
                 loadProducts();
 
             } else {
@@ -192,16 +216,25 @@ $("#productForm").submit(function(e){
                 Swal.fire({
                     icon: 'error',
                     title: 'Failed',
-                    text: res.MESSAGE || res.message || "Something went wrong"
+                    text: res.MESSAGE || res.message
                 });
+
             }
-        },
-        error: function(){
-            $("#msg").html(`<span class="text-danger">Error adding product</span>`);
         }
     });
-
 });
+
+function editProduct(id, name, category, price, stock, description){
+
+    $("#product_id").val(id);
+    $("input[name='name']").val(name);
+    $("select[name='category']").val(category);
+    $("input[name='price']").val(price);
+    $("input[name='stock']").val(stock);
+    $("textarea[name='description']").val(description);
+
+    $("#formBtn").text("Update Product");
+}
 
 function deleteProduct(id){
 
