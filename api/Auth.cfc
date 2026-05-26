@@ -5,6 +5,7 @@
     <cfargument name="first_name" required="true">
     <cfargument name="last_name" required="true">
     <cfargument name="username" required="true">
+    <cfargument name="address" required="true">
     <cfargument name="email" required="true">
     <cfargument name="password" required="true">
     <cfargument name="role" required="true">
@@ -14,6 +15,7 @@
     <cfset arguments.first_name = trim(arguments.first_name)>
     <cfset arguments.last_name = trim(arguments.last_name)>
     <cfset arguments.username = trim(arguments.username)>
+    <cfset arguments.address = trim(arguments.address)>
     <cfset arguments.email = trim(arguments.email)>
     <cfset arguments.password = trim(arguments.password)>
     <cfset arguments.role = trim(arguments.role)>
@@ -21,6 +23,7 @@
     <cfif trim(arguments.first_name) EQ "" OR
           trim(arguments.last_name) EQ "" OR
           trim(arguments.username) EQ "" OR
+          trim(arguments.address) EQ "" OR
           trim(arguments.email) EQ "" OR
           trim(arguments.password) EQ "" OR
           trim(arguments.role) EQ "">
@@ -94,6 +97,7 @@
                 first_name,
                 last_name,
                 username,
+                address,
                 email,
                 password,
                 role,
@@ -104,6 +108,7 @@
                 <cfqueryparam value="#arguments.first_name#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#arguments.last_name#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#arguments.username#" cfsqltype="cf_sql_varchar">,
+                <cfqueryparam value="#arguments.address#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#arguments.email#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#arguments.password#" cfsqltype="cf_sql_varchar">,
                 <cfqueryparam value="#arguments.role#" cfsqltype="cf_sql_varchar">,
