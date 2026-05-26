@@ -255,6 +255,7 @@ function toggleStatus(id){
                 });
 
                 loadProducts();
+                loadStats();
 
             } else {
 
@@ -272,11 +273,42 @@ function toggleStatus(id){
     });
 }
 
+function loadStats(){
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getAdminStats",
+        type: "GET",
+        dataType: "json",
+
+        success: function(res){
+
+            console.log("STATS RESPONSE:", res);
+
+            let data = res.DATA || res.data;
+
+            if(!data){
+                console.log("No stats data found");
+                return;
+            }
+
+            $("#totalProducts").text(data.TOTAL || 0);
+            $("#activeProducts").text(data.ACTIVE || 0);
+            $("#inactiveProducts").text(data.INACTIVE || 0);
+            $("#outStockProducts").text(data.OUTOFSTOCK || 0);
+        },
+
+        error: function(xhr){
+            console.log("Stats API error:", xhr.responseText);
+        }
+    });
+}
 
 $(document).ready(function(){
     loadSellers();
     loadProducts(); 
+    loadStats();
 });
+
 
 </script>
 

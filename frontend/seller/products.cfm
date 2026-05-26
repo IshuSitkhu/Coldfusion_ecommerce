@@ -210,6 +210,7 @@ $("#productForm").submit(function(e){
                 $("#formBtn").text("Add Product");
 
                 loadProducts();
+                loadStats();
 
             } else {
 
@@ -245,6 +246,7 @@ function deleteProduct(id){
         dataType: "json",
         success: function(res){
             loadProducts();
+            loadStats();
         }
     });
 

@@ -324,4 +324,41 @@
 
 </cffunction>
 
+<cffunction name="getAdminStats" access="remote" returntype="struct" returnformat="json">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <cfquery name="qStats" datasource="ecommerce">
+            SELECT 
+                COUNT(*) AS total_products,
+
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_products,
+
+                SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive_products,
+
+                SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END) AS out_stock
+            FROM products
+        </cfquery>
+
+        <cfset result.status = true>
+        <cfset result.data = {
+            total = qStats.total_products,
+            active = qStats.active_products,
+            inactive = qStats.inactive_products,
+            outofstock = qStats.out_stock
+        }>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
 </cfcomponent>
