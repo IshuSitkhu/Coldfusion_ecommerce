@@ -8,11 +8,74 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="bg-light">
 
 <div class="container mt-4">
+
+    <div class="row mb-3">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Total Products</h6>
+                    <h4 id="totalProducts">0</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Active</h6>
+                    <h4 id="activeProducts">0</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Inactive</h6>
+                    <h4 id="inactiveProducts">0</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Out of Stock</h6>
+                    <h4 id="outStockProducts">0</h4>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm mb-3">
+
+        <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+
+            <button class="btn btn-dark btn-sm" onclick="setFilter('all')">All Products</button>
+
+            <button class="btn btn-primary btn-sm" onclick="setFilter('recent')">Recently Added</button>
+
+            <button class="btn btn-success btn-sm" onclick="setFilter('active')">Active</button>
+
+            <button class="btn btn-warning btn-sm" onclick="setFilter('inactive')">Inactive</button>
+
+            <button class="btn btn-danger btn-sm" onclick="setFilter('outofstock')">Out of Stock</button>
+
+            <select id="sellerFilter" class="form-select form-select-sm w-auto ms-auto">
+                <option value="">Filter by Seller</option>
+            </select>
+
+        </div>
+
+    </div>
 
     <div class="card shadow-sm">
 
@@ -20,13 +83,13 @@
             All Products (Admin Control Panel)
         </div>
 
-        <div class="card-body">
+        <div class="card-body table-responsive">
 
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover align-middle">
 
-                <thead>
+                <thead class="table-light">
                     <tr>
-                        <th>ID</th>
+                        
                         <th>Product</th>
                         <th>Category</th>
                         <th>Price</th>
@@ -37,7 +100,13 @@
                     </tr>
                 </thead>
 
-                <tbody id="adminProductTable"></tbody>
+                <tbody id="adminProductTable">
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            Loading products...
+                        </td>
+                    </tr>
+                </tbody>
 
             </table>
 
@@ -48,68 +117,149 @@
 </div>
 
 <script>
+let currentFilter = "all";
+let currentSeller = "";
 
-function loadAllProducts(){
+
+function loadSellers(){
 
     $.ajax({
-        url: "../api/Product.cfc?method=getAllProducts",
+        url: "/ecommerce/api/Product.cfc?method=getSellers",
         type: "GET",
         dataType: "json",
+
         success: function(res){
+
+            if(!res.status) return;
+
+            let options = `<option value="">Filter by Seller</option>`;
+
+            res.data.forEach(function(s){
+                options += `<option value="${s.user_id}">${s.username}</option>`;
+            });
+
+            $("#sellerFilter").html(options);
+        }
+    });
+}
+
+function loadProducts() {
+
+    $("#adminProductTable").html(`
+        <tr><td colspan="8" class="text-center">Loading...</td></tr>
+    `);
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getAdminProducts",
+        type: "GET",
+        data: {
+            filter: currentFilter,
+            seller_id: currentSeller
+        },
+        dataType: "json",
+
+        success: function(res) {
+
+            console.log("ADMIN RESPONSE:", res);
+
+            if (!res.STATUS) {
+                Swal.fire("Error", res.MESSAGE || "Failed loading products", "error");
+                return;
+            }
+
+            let data = res.DATA;
+
+            if (!data || data.length === 0) {
+                $("#adminProductTable").html(`
+                    <tr><td colspan="8" class="text-center">No products found</td></tr>
+                `);
+                return;
+            }
 
             let rows = "";
 
-            res.DATA.forEach(function(item){
+            data.forEach(function(item) {
 
-                let statusBtn = "";
+                let btn = "";
 
-                if(item[7] == "active"){
-                    statusBtn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${item[0]})">Disable</button>`;
+                if (item.STATUS === "active") {
+                    btn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Disable</button>`;
                 } else {
-                    statusBtn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${item[0]})">Enable</button>`;
+                    btn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Enable</button>`;
                 }
 
                 rows += `
                     <tr>
-                        <td>${item[0]}</td>
-                        <td>${item[2]}</td>
-                        <td>${item[3]}</td>
-                        <td>${item[4]}</td>
-                        <td>${item[5]}</td>
-                        <td>${item[9]}</td>
-                        <td>${item[7]}</td>
-                        <td>${statusBtn}</td>
+                        
+                        <td>${item.PRODUCT_NAME}</td>
+                        <td>${item.CATEGORY}</td>
+                        <td>${item.PRICE}</td>
+                        <td>${item.STOCK}</td>
+                        <td>${item.SELLER_NAME}</td>
+                        <td>
+                            <span class="badge bg-${item.STATUS === 'active' ? 'success' : 'secondary'}">
+                                ${item.STATUS}
+                            </span>
+                        </td>
+                        <td>${btn}</td>
                     </tr>
                 `;
-
             });
 
             $("#adminProductTable").html(rows);
+        },
 
+        error: function(xhr) {
+            console.log(xhr.responseText);
+
+            Swal.fire("Error", "Server error while loading products", "error");
         }
     });
-
 }
+
+
+function setFilter(filter){
+    currentFilter = filter;
+    loadProducts(); 
+}
+
+
+
+$("#sellerFilter").on("change", function(){
+    currentSeller = $(this).val();
+    loadProducts(); 
+});
 
 
 function toggleStatus(id){
 
     $.ajax({
-        url: "../api/Product.cfc?method=toggleStatus",
+        url: "/ecommerce/api/Product.cfc?method=toggleStatus",
         type: "POST",
         data: { product_id: id },
         dataType: "json",
+
         success: function(res){
 
-            loadAllProducts();
+            if(res.status){
+                Swal.fire("Success", res.message, "success");
+                loadProducts();
+            } else {
+                Swal.fire("Error", res.message, "error");
+            }
+        },
 
+        error: function(){
+            Swal.fire("Error", "Failed to update status", "error");
         }
     });
-
 }
 
 
-loadAllProducts();
+$(document).ready(function(){
+    loadSellers();
+    loadProducts(); 
+});
 
 </script>
 

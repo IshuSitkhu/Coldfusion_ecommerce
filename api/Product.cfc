@@ -159,4 +159,128 @@
 
 </cffunction>
 
+<cffunction name="getSellers" access="remote" returntype="struct" returnformat="json">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <cfquery name="qSellers" datasource="ecommerce">
+            SELECT user_id, username
+            FROM users
+            WHERE role = 'seller'
+            ORDER BY username
+        </cfquery>
+
+        <cfset result.status = true>
+        <cfset result.data = []>
+
+        <cfloop query="qSellers">
+            <cfset arrayAppend(result.data, {
+                user_id = qSellers.user_id,
+                username = qSellers.username
+            })>
+        </cfloop>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
+<cffunction name="getAdminProducts" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="filter" required="false" default="all">
+    <cfargument name="seller_id" required="false" default="">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <cfquery name="qProducts" datasource="ecommerce">
+            SELECT 
+                p.product_id,
+                p.product_name,
+                p.category,
+                p.price,
+                p.stock,
+                p.status,
+                p.created_at,
+                u.username AS seller_name
+            FROM products p
+            INNER JOIN users u ON p.seller_id = u.user_id
+            WHERE 1=1
+        </cfquery>
+
+        <cfset var filteredData = []>
+
+        <cfloop query="qProducts">
+
+            <cfset var includeRow = true>
+
+            <cfif arguments.seller_id NEQ "" AND qProducts.seller_id NEQ arguments.seller_id>
+                <cfset includeRow = false>
+            </cfif>
+
+            <cfif arguments.filter EQ "active" AND qProducts.status NEQ "active">
+                <cfset includeRow = false>
+            </cfif>
+
+            <cfif arguments.filter EQ "inactive" AND qProducts.status NEQ "inactive">
+                <cfset includeRow = false>
+            </cfif>
+
+            <!--- out of stock --->
+            <cfif arguments.filter EQ "outofstock" AND qProducts.stock GT 0>
+                <cfset includeRow = false>
+            </cfif>
+
+            <cfif includeRow>
+                <cfset arrayAppend(filteredData, {
+                    product_id = qProducts.product_id,
+                    product_name = qProducts.product_name,
+                    category = qProducts.category,
+                    price = qProducts.price,
+                    stock = qProducts.stock,
+                    status = qProducts.status,
+                    seller_name = qProducts.seller_name,
+                    created_at = qProducts.created_at
+                })>
+            </cfif>
+
+        </cfloop>
+
+        <!--- RECENT FILTER --->
+        <cfif arguments.filter EQ "recent">
+            <cfset arraySort(filteredData, function(a,b){
+                return compare(b.created_at, a.created_at)
+            })>
+
+            <cfif arrayLen(filteredData) GT 10>
+                <cfset filteredData = arraySlice(filteredData, 1, 10)>
+            </cfif>
+        </cfif>
+
+        <!--- FINAL RESPONSE --->
+        <cfset result.status = true>
+        <cfset result.data = filteredData>
+        <cfset result.count = arrayLen(filteredData)>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+        <cfset result.detail = cfcatch.detail>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
 </cfcomponent>
