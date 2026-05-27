@@ -500,5 +500,81 @@
 
 </cffunction>
 
+<cffunction name="addToCart" access="remote" returntype="struct" returnformat="json">
 
+    <cfargument name="user_id" required="true">
+    <cfargument name="product_id" required="true">
+    <cfargument name="quantity" required="false" default="1">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <!--- VALIDATION --->
+        <cfif NOT len(arguments.product_id)>
+            <cfset result.status = false>
+            <cfset result.message = "Product ID missing">
+            <cfreturn result>
+        </cfif>
+
+        <!--- CHECK IF ITEM ALREADY EXISTS IN CART --->
+        <cfquery name="qCheck" datasource="ecommerce">
+            SELECT cart_id, quantity
+            FROM cart
+            WHERE user_id = <cfqueryparam value="#arguments.user_id#" cfsqltype="cf_sql_integer">
+            AND product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+
+        <cfif qCheck.recordCount GT 0>
+
+            <!--- UPDATE EXISTING CART ITEM --->
+            <cfquery datasource="ecommerce">
+                UPDATE cart
+                SET quantity = quantity + <cfqueryparam value="#arguments.quantity#" cfsqltype="cf_sql_integer">
+                WHERE cart_id = <cfqueryparam value="#qCheck.cart_id#" cfsqltype="cf_sql_integer">
+            </cfquery>
+
+            <cfset result.message = "Cart updated (quantity increased)">
+
+        <cfelse>
+
+            <!--- OPTIONAL: CHECK PRODUCT STOCK --->
+            <cfquery name="qProduct" datasource="ecommerce">
+                SELECT stock
+                FROM products
+                WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+            </cfquery>
+
+            <cfif qProduct.recordCount EQ 0>
+                <cfset result.status = false>
+                <cfset result.message = "Product not found">
+                <cfreturn result>
+            </cfif>
+
+            <!--- INSERT NEW CART ITEM --->
+            <cfquery datasource="ecommerce">
+                INSERT INTO cart(user_id, product_id, quantity)
+                VALUES(
+                    <cfqueryparam value="#arguments.user_id#" cfsqltype="cf_sql_integer">,
+                    <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">,
+                    <cfqueryparam value="#arguments.quantity#" cfsqltype="cf_sql_integer">
+                )
+            </cfquery>
+
+            <cfset result.message = "Added to cart">
+
+        </cfif>
+
+        <cfset result.status = true>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+        <cfset result.detail = cfcatch.detail>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+</cffunction>
 </cfcomponent>

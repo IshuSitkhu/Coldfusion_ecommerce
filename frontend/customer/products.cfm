@@ -12,6 +12,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         .product-card{
@@ -67,6 +68,7 @@
 
 let category = "";
 let seller = "";
+let CURRENT_USER_ID = <cfoutput>#session.user_id#</cfoutput>;
 
 $(document).ready(function () {
 
@@ -216,6 +218,9 @@ function loadProducts(){
                     <div class="price mt-2">
                         Rs ${p.PRICE}
                     </div>
+                    <button class="btn btn-primary btn-sm" onclick="addToCart(${p.PRODUCT_ID})">
+                        Add to Cart
+                    </button>
 
                     </div>
                 </div>
@@ -274,6 +279,50 @@ $("#resetBtn").on("click", function(){
     loadProducts();
 });
 
+function addToCart(product_id){
+
+    console.log("ADD TO CART CLICKED:", product_id);
+    console.log("USER ID:", CURRENT_USER_ID);
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=addToCart",
+        type: "POST",
+        data: {
+            product_id: product_id,
+            user_id: CURRENT_USER_ID,
+            quantity: 1
+        },
+
+        dataType: "json",   
+
+        success: function(res){
+
+            console.log("ADD TO CART RESPONSE:", res);
+
+            let status = res.STATUS ?? res.status;
+            let message = res.MESSAGE ?? res.message;
+
+            console.log("NORMALIZED STATUS:", status);
+            console.log("NORMALIZED MESSAGE:", message);
+
+            if(status === true || status === "true"){
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: message
+                });
+
+            } else {
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed",
+                    text: message || "Something went wrong"
+                });
+            }
+        }
+    });
+}
 </script>
 
 </body>

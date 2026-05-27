@@ -89,16 +89,12 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="../customer/categories.cfm">
-                            Categories
+                        <a class="nav-link" href="../customer/products.cfm">
+                            Add to Card
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="../customer/sellers.cfm">
-                            Sellers
-                        </a>
-                    </li>
+                    
 
                     <li class="nav-item">
                         <a class="nav-link" href="../customer/purchaseHistory.cfm">
