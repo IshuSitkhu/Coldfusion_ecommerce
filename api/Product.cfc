@@ -204,7 +204,6 @@
 
         <cflog file="product_debug" text="FILTER=#arguments.filter# | SELLER=#arguments.seller_id#">
 
-        <!--- CLEAN QUERY --->
         <cfquery name="qProducts" datasource="ecommerce">
             SELECT 
                 p.product_id,

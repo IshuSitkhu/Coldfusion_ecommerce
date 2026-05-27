@@ -79,7 +79,7 @@
 
     <div class="card shadow-sm">
 
-        <div class="card-header bg-dark text-white">
+        <div class="card-header bg-dark text-white" id="tableTitle">
             All Products (Admin Control Panel)
         </div>
 
@@ -128,21 +128,27 @@ function loadSellers(){
         type: "GET",
         dataType: "json",
 
-        success: function(res){
+        success:function(res){
 
-            console.log("SELLERS API RESPONSE:", res);
+            console.log("SELLERS API RESPONSE:",res);
 
             if(!res.STATUS){
                 console.log("Seller API failed");
                 return;
             }
 
-            let options = `<option value="">Filter by Seller</option>`;
+            let options=`<option value="">Filter by Seller</option>`;
 
             res.DATA.forEach(function(s){
-                console.log("SELLER:", s);
 
-                options += `<option value="${s.user_ID}">${s.USERNAME}</option>`;
+                console.log("USER_ID:",s.USER_ID);
+                console.log("USERNAME:",s.USERNAME);
+
+                options += `
+                    <option value="${s.USER_ID}">
+                        ${s.USERNAME}
+                    </option>
+                `;
             });
 
             $("#sellerFilter").html(options);
@@ -248,15 +254,11 @@ $("#sellerFilter").on("change", function(){
 
     console.log("DROPDOWN CHANGE EVENT FIRED");
 
-    let val = $(this).val();
+    currentSeller=$(this).val();
 
-    console.log("RAW SELECT VALUE:", val);
+    console.log("RAW SELECT VALUE:",currentSeller);
 
-    currentSeller = val;
-
-    console.log("currentSeller UPDATED TO:", currentSeller);
-
-    loadProducts(); 
+    loadProducts();
 });
 
 
