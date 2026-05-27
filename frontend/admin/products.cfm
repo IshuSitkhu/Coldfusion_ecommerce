@@ -158,6 +158,41 @@ function loadSellers(){
     });
 }
 
+function updateTableTitle(){
+
+    let title = "All Products";
+
+    // Filter title
+    switch(currentFilter){
+
+        case "recent":
+            title = "Recently Added Products";
+            break;
+
+        case "active":
+            title = "Active Products";
+            break;
+
+        case "inactive":
+            title = "Inactive Products";
+            break;
+
+        case "outofstock":
+            title = "Out of Stock Products";
+            break;
+    }
+
+    // Add seller name if selected
+    if(currentSeller){
+
+        let sellerName = $("#sellerFilter option:selected").text();
+
+        title += ` - ${sellerName}`;
+    }
+
+    $("#tableTitle").text(title + " (Admin Control Panel)");
+}
+
 function loadProducts() {
 
     console.log("FILTER DEBUG:");
@@ -247,6 +282,7 @@ function loadProducts() {
 
 function setFilter(filter){
     currentFilter = filter;
+    updateTableTitle();
     loadProducts(); 
 }
 
@@ -258,6 +294,7 @@ $("#sellerFilter").on("change", function(){
 
     console.log("RAW SELECT VALUE:",currentSeller);
 
+    updateTableTitle();
     loadProducts();
 });
 
@@ -336,6 +373,7 @@ function loadStats(){
 
 $(document).ready(function(){
     loadSellers();
+    updateTableTitle();
     loadProducts(); 
     loadStats();
 });
