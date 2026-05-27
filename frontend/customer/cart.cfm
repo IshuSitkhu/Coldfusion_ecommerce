@@ -240,7 +240,6 @@ function removeItem(cart_id){
 }
 
 
-
 function increaseQty(cart_id){
 
     console.log("INCREASE CLICKED:",cart_id);
@@ -267,8 +266,6 @@ function increaseQty(cart_id){
     });
 
 }
-
-
 
 function decreaseQty(cart_id){
 
@@ -298,16 +295,87 @@ function decreaseQty(cart_id){
 }
 
 
-
 function checkout(){
 
     console.log("CHECKOUT CLICKED");
 
     Swal.fire({
 
-        icon:"info",
-        title:"Coming Soon",
-        text:"Checkout will be implemented next"
+        title:"Confirm Purchase?",
+        text:"Do you want to continue?",
+        icon:"question",
+        showCancelButton:true,
+        confirmButtonText:"Yes"
+
+    }).then((result)=>{
+
+        if(result.isConfirmed){
+
+            console.log("USER CONFIRMED CHECKOUT");
+
+            $.ajax({
+
+                url:"/ecommerce/api/Product.cfc?method=checkout",
+                type:"POST",
+                dataType:"json",
+
+                success:function(res){
+
+                    console.log("CHECKOUT RESPONSE:",res);
+
+                    let status=res.STATUS ?? res.status;
+                    let message=res.MESSAGE ?? res.message;
+
+                    console.log("STATUS:",status);
+                    console.log("MESSAGE:",message);
+
+                    if(status){
+
+                        Swal.fire({
+
+                            icon:"success",
+                            title:"Purchase Completed",
+                            text:message
+
+                        }).then(()=>{
+
+                            window.location=
+                            "../customer/purchaseHistory.cfm";
+
+                        });
+
+                    }
+                    else{
+
+                        Swal.fire({
+
+                            icon:"error",
+                            title:"Failed",
+                            text:message
+
+                        });
+
+                    }
+
+                },
+
+                error:function(xhr){
+
+                    console.log("CHECKOUT ERROR:",
+                    xhr.responseText);
+
+                    Swal.fire({
+
+                        icon:"error",
+                        title:"Server Error"
+
+                    });
+
+                }
+
+            });
+
+        }
 
     });
 
