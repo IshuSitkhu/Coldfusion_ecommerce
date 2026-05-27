@@ -392,4 +392,113 @@
 
 </cffunction>
 
+<cffunction name="getAllProductsForCustomer" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="category" required="false" default="">
+    <cfargument name="seller_id" required="false" default="">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <!--- MAIN QUERY WITH FILTERS APPLIED IN SQL (BEST PRACTICE) --->
+        <cfquery name="qProducts" datasource="ecommerce">
+            SELECT 
+                p.product_id,
+                p.product_name,
+                p.category,
+                p.price,
+                p.stock,
+                p.status,
+                p.seller_id,
+                u.username AS seller_name
+            FROM products p
+            INNER JOIN users u
+                ON p.seller_id = u.user_id
+            WHERE p.status = 'active'
+
+            <!--- CATEGORY FILTER --->
+            <cfif arguments.category NEQ "">
+                AND p.category = <cfqueryparam value="#arguments.category#" cfsqltype="cf_sql_varchar">
+            </cfif>
+
+            <!--- SELLER FILTER --->
+            <cfif arguments.seller_id NEQ "">
+                AND p.seller_id = <cfqueryparam value="#arguments.seller_id#" cfsqltype="cf_sql_integer">
+            </cfif>
+
+        </cfquery>
+
+        <!--- BUILD RESPONSE ARRAY --->
+        <cfset var data = []>
+
+        <cfloop query="qProducts">
+
+            <cfset arrayAppend(data, {
+                product_id = qProducts.product_id,
+                product_name = qProducts.product_name,
+                category = qProducts.category,
+                price = qProducts.price,
+                stock = qProducts.stock,
+                status = qProducts.status,
+                seller_id = qProducts.seller_id,
+                seller_name = qProducts.seller_name
+            })>
+
+        </cfloop>
+
+        <!--- SUCCESS RESPONSE --->
+        <cfset result.status = true>
+        <cfset result.data = data>
+        <cfset result.count = arrayLen(data)>
+
+    <cfcatch>
+
+        <!--- ERROR RESPONSE --->
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+        <cfset result.detail = cfcatch.detail>
+
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
+<cffunction name="getCategories" access="remote" returntype="struct" returnformat="json">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <cfquery name="q" datasource="ecommerce">
+            SELECT DISTINCT category
+            FROM products
+            WHERE status = 'active'
+            ORDER BY category
+        </cfquery>
+
+        <cfset var data = []>
+
+        <cfloop query="q">
+            <cfset arrayAppend(data, q.category)>
+        </cfloop>
+
+        <cfset result.status = true>
+        <cfset result.data = data>
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
+
 </cfcomponent>

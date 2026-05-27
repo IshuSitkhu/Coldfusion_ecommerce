@@ -6,13 +6,10 @@
 <head>
     <title>Products</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -73,6 +70,9 @@ let seller = "";
 
 $(document).ready(function () {
 
+    console.log("PAGE LOADED");
+
+    // INIT SELECT2 ONCE
     $("#categoryFilter").select2({
         placeholder: "Select Category",
         width: '200px'
@@ -83,49 +83,78 @@ $(document).ready(function () {
         width: '200px'
     });
 
+    console.log("SELECT2 INITIALIZED");
+
     loadFilters();
     loadProducts();
 });
 
-
 function loadFilters(){
 
+    console.log("LOADING FILTERS STARTED");
+
+    // SELLERS
     $.ajax({
         url: "/ecommerce/api/Product.cfc?method=getSellers",
         type: "GET",
         dataType: "json",
+
         success: function(res){
+
+            console.log("SELLERS API RESPONSE:", res);
 
             let options = `<option value=""></option>`;
 
-            res.data.forEach(function(s){
-                options += `<option value="${s.user_id}">${s.username}</option>`;
+            (res.DATA || []).forEach(function(s){
+                console.log("SELLER ITEM:", s);
+                options += `<option value="${s.USER_ID}">${s.USERNAME}</option>`;
             });
 
-            $("#sellerFilter").html(options);
+            $("#sellerFilter").html(options).trigger("change");
+
+            console.log("SELLER FILTER LOADED");
+        },
+
+        error: function(xhr){
+            console.log("SELLER API ERROR:", xhr.responseText);
         }
     });
 
+    // CATEGORIES
     $.ajax({
-        url: "/ecommerce/api/Product.cfc?method=getMyProducts",
+        url: "/ecommerce/api/Product.cfc?method=getCategories",
         type: "GET",
         dataType: "json",
+
         success: function(res){
 
-            let unique = [...new Set(res.data.map(p => p.category))];
+            console.log("CATEGORY RESPONSE:", res);
+
+            let categories = res.DATA || [];
+
+            console.log("CATEGORIES:", categories);
 
             let options = `<option value=""></option>`;
 
-            unique.forEach(function(c){
+            categories.forEach(function(c){
+                console.log("CATEGORY ITEM:", c);
                 options += `<option value="${c}">${c}</option>`;
             });
 
             $("#categoryFilter").html(options);
+            $("#categoryFilter").trigger("change");
+
+            console.log("CATEGORY DROPDOWN LOADED");
         }
     });
 }
 
+
 function loadProducts(){
+
+    console.log("LOAD PRODUCTS CALLED");
+    console.log("CURRENT CATEGORY:", category);
+    console.log("CURRENT SELLER:", seller);
 
     $("#productGrid").html(`<div class="text-center">Loading...</div>`);
 
@@ -137,34 +166,56 @@ function loadProducts(){
             seller_id: seller
         },
         dataType: "json",
+
         success: function(res){
 
-            if(!res.STATUS){
+            console.log("PRODUCT API RAW RESPONSE:", res);
+
+            let data = res.data || res.DATA || [];
+            let status = res.status ?? res.STATUS;
+
+            console.log("NORMALIZED STATUS:", status);
+            console.log("NORMALIZED DATA:", data);
+
+            if(!status){
+                console.log("API STATUS FALSE");
                 $("#productGrid").html(`<div class="text-danger text-center">Failed loading products</div>`);
+                return;
+            }
+
+            if(!Array.isArray(data)){
+                console.log("DATA NOT ARRAY:", data);
+                data = [];
+            }
+
+            if(data.length === 0){
+                console.log("NO PRODUCTS FOUND AFTER FILTER");
+                $("#productGrid").html(`<div class="text-muted text-center">No products found</div>`);
                 return;
             }
 
             let html = "";
 
-            res.DATA.forEach(function(p){
+            data.forEach(function(p){
+
+                console.log("PRODUCT ITEM:", p);
 
                 html += `
                 <div class="col-md-3 mb-3">
                     <div class="product-card">
 
-                        <h6>${p.PRODUCT_NAME}</h6>
+                    <h6>${p.PRODUCT_NAME}</h6>
 
-                        <div class="text-muted small">
-                            ${p.CATEGORY} | ${p.SELLER_NAME}
-                        </div>
+                    <div class="text-muted small">
+                        Seller - ${p.SELLER_NAME}
+                    </div>
+                    <div class="text-muted small">
+                        ${p.CATEGORY}
+                    </div>
 
-                        <div class="price mt-2">
-                            Rs ${p.PRICE}
-                        </div>
-
-                        <button class="btn btn-sm btn-primary mt-2 w-100">
-                            View
-                        </button>
+                    <div class="price mt-2">
+                        Rs ${p.PRICE}
+                    </div>
 
                     </div>
                 </div>
@@ -172,28 +223,53 @@ function loadProducts(){
             });
 
             $("#productGrid").html(html);
+
+            console.log("PRODUCT GRID RENDERED");
+        },
+
+        error: function(xhr){
+            console.log("PRODUCT API ERROR:", xhr.responseText);
+            $("#productGrid").html(`<div class="text-danger text-center">Server Error</div>`);
         }
     });
 }
 
 
-$("#categoryFilter").on("change", function(){
-    category = $(this).val();
+$("#categoryFilter").on("change", function () {
+
+    console.log("CATEGORY CHANGE EVENT FIRED");
+
+    category = $(this).val() || "";
+
+    console.log("SELECTED CATEGORY:", category);
+
     loadProducts();
 });
 
-$("#sellerFilter").on("change", function(){
-    seller = $(this).val();
+
+$("#sellerFilter").on("change", function () {
+
+    console.log("SELLER CHANGE EVENT FIRED");
+
+    seller = $(this).val() || "";
+
+    console.log("SELECTED SELLER:", seller);
+
     loadProducts();
 });
+
 
 $("#resetBtn").on("click", function(){
+
+    console.log("RESET BUTTON CLICKED");
 
     category = "";
     seller = "";
 
     $("#categoryFilter").val("").trigger("change");
     $("#sellerFilter").val("").trigger("change");
+
+    console.log("FILTERS RESET");
 
     loadProducts();
 });
