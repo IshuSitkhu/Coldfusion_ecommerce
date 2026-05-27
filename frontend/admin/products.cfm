@@ -9,6 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 
 <body class="bg-light">
@@ -286,13 +289,13 @@ function setFilter(filter){
     loadProducts(); 
 }
 
-$("#sellerFilter").on("change", function(){
+$("#sellerFilter").on("select2:select select2:clear", function () {
 
-    console.log("DROPDOWN CHANGE EVENT FIRED");
+    console.log("SELECT2 EVENT FIRED");
 
-    currentSeller=$(this).val();
+    currentSeller = $(this).val();
 
-    console.log("RAW SELECT VALUE:",currentSeller);
+    console.log("RAW SELECT VALUE:", currentSeller);
 
     updateTableTitle();
     loadProducts();
@@ -376,6 +379,12 @@ $(document).ready(function(){
     updateTableTitle();
     loadProducts(); 
     loadStats();
+
+     $("#sellerFilter").select2({
+        placeholder: "Filter by Seller",
+        allowClear: true,
+        width: "200px"
+    });
 });
 
 

@@ -297,14 +297,18 @@
 
     <cftry>
 
-        <!--- GET CURRENT STATUS --->
         <cfquery name="q" datasource="ecommerce">
-            SELECT status
-            FROM products
-            WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+            SELECT 
+                p.status,
+                p.product_name,
+                u.email,
+                u.username
+            FROM products p
+            INNER JOIN users u
+                ON p.seller_id = u.user_id
+            WHERE p.product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
         </cfquery>
 
-        <!--- TOGGLE VALUE --->
         <cfset var newStatus = (q.status EQ "active") ? "inactive" : "active">
 
         <cfquery datasource="ecommerce">
@@ -312,6 +316,30 @@
             SET status = <cfqueryparam value="#newStatus#" cfsqltype="cf_sql_varchar">
             WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
         </cfquery>
+
+        <cfmail
+            to="#q.email#"
+            from="ishusitikhu6@gmail.com"
+            subject="Product Status Updated"
+            type="html">
+
+            Hello #q.username#,<br><br>
+
+            Your product <b>#q.product_name#</b> status has been changed to:
+
+            <b>#ucase(newStatus)#</b><br><br>
+
+            <cfif newStatus EQ "inactive">
+                Your product has been disabled by admin.
+            <cfelse>
+                Your product is now active again.
+            </cfif>
+
+            <br><br>
+            Regards,<br>
+            Admin Team
+
+        </cfmail>
 
         <cfset result.status = true>
         <cfset result.message = "Status updated to " & newStatus>
