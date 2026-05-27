@@ -130,20 +130,33 @@ function loadSellers(){
 
         success: function(res){
 
-            if(!res.status) return;
+            console.log("SELLERS API RESPONSE:", res);
+
+            if(!res.STATUS){
+                console.log("Seller API failed");
+                return;
+            }
 
             let options = `<option value="">Filter by Seller</option>`;
 
-            res.data.forEach(function(s){
-                options += `<option value="${s.user_id}">${s.username}</option>`;
+            res.DATA.forEach(function(s){
+                console.log("SELLER:", s);
+
+                options += `<option value="${s.user_ID}">${s.USERNAME}</option>`;
             });
 
             $("#sellerFilter").html(options);
+
+            console.log("Seller dropdown loaded successfully");
         }
     });
 }
 
 function loadProducts() {
+
+    console.log("FILTER DEBUG:");
+    console.log("currentFilter:", currentFilter);
+    console.log("currentSeller:", currentSeller);
 
     $("#adminProductTable").html(`
         <tr><td colspan="8" class="text-center">Loading...</td></tr>
@@ -160,16 +173,25 @@ function loadProducts() {
 
         success: function(res) {
 
-            console.log("ADMIN RESPONSE:", res);
+            console.log("RAW RESPONSE:");
+            console.log(res);
+
+            console.log("STATUS TYPE:", typeof res.STATUS);
+            console.log("DATA TYPE:", typeof res.DATA);
+            console.log("DATA:", res.DATA);
 
             if (!res.STATUS) {
+                console.log("API ERROR MESSAGE:", res.MESSAGE);
                 Swal.fire("Error", res.MESSAGE || "Failed loading products", "error");
                 return;
             }
 
             let data = res.DATA;
 
+            console.log("FINAL PRODUCT LIST:", data);
+
             if (!data || data.length === 0) {
+                console.log("NO PRODUCTS AFTER FILTER");
                 $("#adminProductTable").html(`
                     <tr><td colspan="8" class="text-center">No products found</td></tr>
                 `);
@@ -179,6 +201,8 @@ function loadProducts() {
             let rows = "";
 
             data.forEach(function(item) {
+
+                console.log("ROW ITEM:", item);
 
                 let btn = "";
 
@@ -190,17 +214,12 @@ function loadProducts() {
 
                 rows += `
                     <tr>
-                        
                         <td>${item.PRODUCT_NAME}</td>
                         <td>${item.CATEGORY}</td>
                         <td>${item.PRICE}</td>
                         <td>${item.STOCK}</td>
                         <td>${item.SELLER_NAME}</td>
-                        <td>
-                            <span class="badge bg-${item.STATUS === 'active' ? 'success' : 'secondary'}">
-                                ${item.STATUS}
-                            </span>
-                        </td>
+                        <td>${item.STATUS}</td>
                         <td>${btn}</td>
                     </tr>
                 `;
@@ -210,7 +229,9 @@ function loadProducts() {
         },
 
         error: function(xhr) {
+            console.log("AJAX ERROR:");
             console.log(xhr.responseText);
+            console.log(xhr.status);
 
             Swal.fire("Error", "Server error while loading products", "error");
         }
@@ -223,10 +244,18 @@ function setFilter(filter){
     loadProducts(); 
 }
 
-
-
 $("#sellerFilter").on("change", function(){
-    currentSeller = $(this).val();
+
+    console.log("DROPDOWN CHANGE EVENT FIRED");
+
+    let val = $(this).val();
+
+    console.log("RAW SELECT VALUE:", val);
+
+    currentSeller = val;
+
+    console.log("currentSeller UPDATED TO:", currentSeller);
+
     loadProducts(); 
 });
 

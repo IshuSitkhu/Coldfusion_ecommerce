@@ -202,6 +202,8 @@
 
     <cftry>
 
+        <cflog file="product_debug" text="FILTER=#arguments.filter# | SELLER=#arguments.seller_id#">
+
         <!--- CLEAN QUERY --->
         <cfquery name="qProducts" datasource="ecommerce">
             SELECT 
@@ -226,8 +228,10 @@
 
             <cfset var includeRow = true>
 
+            <cflog file="product_debug" text="ROW seller_id=#qProducts.seller_id# | FILTER=#arguments.seller_id#">
+
             <!--- SELLER FILTER --->
-            <cfif arguments.seller_id NEQ "" AND val(qProducts.seller_id) NEQ val(arguments.seller_id)>
+            <cfif len(trim(arguments.seller_id)) AND qProducts.seller_id NEQ arguments.seller_id>
                 <cfset includeRow = false>
             </cfif>
 
