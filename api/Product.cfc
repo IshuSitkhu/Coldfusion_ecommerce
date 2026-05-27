@@ -577,4 +577,60 @@
 
     <cfreturn result>
 </cffunction>
+
+<cffunction name="removeItem" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="cart_id" required="true">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <cfquery datasource="ecommerce">
+            DELETE FROM cart
+            WHERE cart_id = <cfqueryparam value="#arguments.cart_id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+
+        <cfset result.status = true>
+        <cfset result.message = "Item removed">
+
+    <cfcatch>
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+</cffunction>
+
+<cffunction name="increaseQty" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="cart_id" required="true">
+
+    <cfquery datasource="ecommerce">
+        UPDATE cart
+        SET quantity = quantity + 1
+        WHERE cart_id = <cfqueryparam value="#arguments.cart_id#" cfsqltype="cf_sql_integer">
+    </cfquery>
+
+    <cfreturn {status=true, message="Increased"}>
+</cffunction>
+
+<cffunction name="decreaseQty" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="cart_id" required="true">
+
+    <cfquery datasource="ecommerce">
+        UPDATE cart
+        SET quantity = CASE 
+            WHEN quantity > 1 THEN quantity - 1 
+            ELSE 1 
+        END
+        WHERE cart_id = <cfqueryparam value="#arguments.cart_id#" cfsqltype="cf_sql_integer">
+    </cfquery>
+
+    <cfreturn {status=true, message="Decreased"}>
+</cffunction>
+
 </cfcomponent>

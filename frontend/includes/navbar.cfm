@@ -89,8 +89,8 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="../customer/products.cfm">
-                            Add to Card
+                        <a class="nav-link" href="../customer/cart.cfm">
+                            Cart
                         </a>
                     </li>
 
