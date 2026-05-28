@@ -7,10 +7,13 @@
 
     SELECT
         o.order_id,
+        o.product_id,
         o.quantity,
         o.price,
         o.total_price,
         o.order_date,
+        o.return_status,
+        o.return_date,
         p.product_name
 
     FROM orders o
@@ -39,8 +42,11 @@
 <head>
     <title>Purchase History</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         .history-card {
@@ -89,6 +95,7 @@
                                 <th>Price</th>
                                 <th>Total</th>
                                 <th>Date</th>
+                                <th>Return</th>
                             </tr>
 
                         </thead>
@@ -129,6 +136,36 @@
                                         </small>
                                     </td>
 
+                                    <td>
+
+                                        <cfset daysPassed = dateDiff("d", order_date, now())>
+
+                                        <cfif return_status EQ "returned">
+
+                                            <span class="badge bg-danger">
+                                                Returned
+                                            </span>
+
+                                        <cfelseif daysPassed LTE 7>
+
+                                            <button
+                                                class="btn btn-warning btn-sm"
+                                                onclick="returnProduct(#order_id#)">
+
+                                                Return Product
+
+                                            </button>
+
+                                        <cfelse>
+
+                                            <span class="text-muted">
+                                                Return Expired
+                                            </span>
+
+                                        </cfif>
+
+                                    </td>
+
                                 </tr>
 
                             </cfoutput>
@@ -162,6 +199,74 @@
 
     </div>
 
+
+<script>
+function returnProduct(order_id){
+
+    console.log("RETURN CLICKED:", order_id);
+
+    Swal.fire({
+
+        title: "Return Product?",
+        text: "This action cannot be undone",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Return"
+
+    }).then((result)=>{
+
+        if(result.isConfirmed){
+
+            $.ajax({
+
+                url: "/ecommerce/api/Product.cfc?method=returnProduct",
+                type: "POST",
+
+                data:{
+                    order_id: order_id
+                },
+
+                dataType: "json",
+
+                success:function(res){
+
+                    console.log("RETURN RESPONSE:", res);
+
+                    let status = res.STATUS ?? res.status;
+                    let message = res.MESSAGE ?? res.message;
+
+                    if(status){
+
+                        Swal.fire({
+                            icon:"success",
+                            title:"Returned",
+                            text: message
+                        }).then(()=>{
+
+                            location.reload();
+
+                        });
+
+                    } else {
+
+                        Swal.fire({
+                            icon:"error",
+                            title:"Failed",
+                            text: message
+                        });
+
+                    }
+
+                }
+
+            });
+
+        }
+
+    });
+
+}
+</script>
 </body>
 
 </html>

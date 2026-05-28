@@ -912,4 +912,134 @@ returnformat="json">
 
 </cffunction>
 
+<cffunction name="returnProduct"
+access="remote"
+returntype="struct"
+returnformat="json">
+
+    <cfargument name="order_id" required="true">
+
+    <cfset var result = {}>
+
+    <cftry>
+        <cfquery name="qOrder" datasource="ecommerce">
+
+            SELECT
+                order_id,
+                product_id,
+                quantity,
+                order_date,
+                return_status
+
+            FROM orders
+
+            WHERE order_id =
+
+            <cfqueryparam
+                value="#arguments.order_id#"
+                cfsqltype="cf_sql_integer">
+
+            AND user_id =
+
+            <cfqueryparam
+                value="#session.user_id#"
+                cfsqltype="cf_sql_integer">
+
+        </cfquery>
+
+        <cfif qOrder.recordCount EQ 0>
+
+            <cfset result.status = false>
+            <cfset result.message = "Order not found">
+
+            <cfreturn result>
+
+        </cfif>
+
+        <cfif qOrder.return_status EQ "returned">
+
+            <cfset result.status = false>
+            <cfset result.message = "Product already returned">
+
+            <cfreturn result>
+
+        </cfif>
+
+        <cfset daysPassed =
+        dateDiff("d", qOrder.order_date, now())>
+
+        <cfif daysPassed GT 7>
+
+            <cfset result.status = false>
+            <cfset result.message = "Return period expired">
+
+            <cfreturn result>
+
+        </cfif>
+
+        <cfquery datasource="ecommerce">
+
+            UPDATE orders
+
+            SET
+                return_status = 'returned',
+                return_date = GETDATE()
+
+            WHERE order_id =
+
+            <cfqueryparam
+                value="#arguments.order_id#"
+                cfsqltype="cf_sql_integer">
+
+        </cfquery>
+
+        <cfquery datasource="ecommerce">
+
+            UPDATE products
+
+            SET stock = stock +
+
+            <cfqueryparam
+                value="#qOrder.quantity#"
+                cfsqltype="cf_sql_integer">
+
+            WHERE product_id =
+
+            <cfqueryparam
+                value="#qOrder.product_id#"
+                cfsqltype="cf_sql_integer">
+
+        </cfquery>
+
+        <cfquery datasource="ecommerce">
+
+            UPDATE products
+
+            SET status = 'active'
+
+            WHERE product_id =
+
+            <cfqueryparam
+                value="#qOrder.product_id#"
+                cfsqltype="cf_sql_integer">
+
+        </cfquery>
+
+        <cfset result.status = true>
+        <cfset result.message = "Product returned successfully">
+
+    <cfcatch>
+
+        <cfset result.status = false>
+        <cfset result.message = cfcatch.message>
+        <cfset result.detail = cfcatch.detail>
+
+    </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+
+</cffunction>
+
 </cfcomponent>
