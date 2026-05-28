@@ -204,23 +204,33 @@ function loadProducts(){
 
                 html += `
                 <div class="col-md-3 mb-3">
-                    <div class="product-card">
+                    <div class="card product-card shadow-sm border-0 h-100">
 
-                    <h6>${p.PRODUCT_NAME}</h6>
+                        <h6 class="fw-bold mb-1 text-truncate">
+                            ${p.PRODUCT_NAME}
+                        </h6>
 
-                    <div class="text-muted small">
-                        Seller - ${p.SELLER_NAME}
-                    </div>
-                    <div class="text-muted small">
-                        ${p.CATEGORY}
-                    </div>
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-person"></i> Seller: ${p.SELLER_NAME}
+                        </div>
+
+                        <div class="small text-muted">
+                            <i class="bi bi-tag"></i> ${p.CATEGORY}
+                        </div>
 
                     <div class="price mt-2">
                         Rs ${p.PRICE}
                     </div>
-                    <button class="btn btn-primary btn-sm" onclick="addToCart(${p.PRODUCT_ID})">
-                        Add to Cart
-                    </button>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="addToCart(${p.PRODUCT_ID})">
+                            Add to Cart
+                        </button>
+
+                        <button class="btn btn-success btn-sm" onclick="buyNow(${p.PRODUCT_ID})">
+                            Buy Now
+                        </button>
+                    </div>
+                    
 
                     </div>
                 </div>
@@ -278,6 +288,72 @@ $("#resetBtn").on("click", function(){
 
     loadProducts();
 });
+
+function buyNow(product_id){
+
+    Swal.fire({
+        title:"Buy this item now?",
+        icon:"question",
+        showCancelButton:true,
+        confirmButtonText:"Buy Now"
+    }).then((result)=>{
+
+        if(result.isConfirmed){
+
+            $.ajax({
+
+                url:"/ecommerce/api/Product.cfc?method=buyNow",
+                type:"POST",
+
+                data:{
+                    product_id:product_id
+                },
+
+                dataType:"json",
+
+                success:function(res){
+
+                    console.log(res);
+
+                    if(res.STATUS){
+
+                        Swal.fire({
+                            icon:"success",
+                            title:"Purchase Completed",
+                            text:res.MESSAGE
+                        }).then(()=>{
+
+                            window.location=
+                            "../customer/purchaseHistory.cfm";
+
+                        });
+
+                    }
+                    else{
+
+                        Swal.fire({
+                            icon:"error",
+                            title:"Failed",
+                            text:res.MESSAGE
+                        });
+
+                    }
+
+                },
+
+                error:function(xhr){
+
+                    console.log(xhr.responseText);
+
+                }
+
+            });
+
+        }
+
+    });
+
+}
 
 function addToCart(product_id){
 

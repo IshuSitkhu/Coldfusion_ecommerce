@@ -634,169 +634,277 @@
 </cffunction>
 
 <cffunction name="checkout"
-access="remote"
-returntype="struct"
-returnformat="json">
+    access="remote"
+    returntype="struct"
+    returnformat="json">
 
-    <cfset var result={}>
+        <cfset var result={}>
 
-    <cftry>
+        <cftry>
 
-        <cfquery name="qCart"
-        datasource="ecommerce">
+            <cfquery name="qCart"
+            datasource="ecommerce">
 
-            SELECT
-            c.cart_id,
-            c.product_id,
-            c.quantity,
-            p.price,
-            p.stock,
-            p.status
+                SELECT
+                c.cart_id,
+                c.product_id,
+                c.quantity,
+                p.price,
+                p.stock,
+                p.status
 
-            FROM cart c
+                FROM cart c
 
-            INNER JOIN products p
-            ON p.product_id=c.product_id
+                INNER JOIN products p
+                ON p.product_id=c.product_id
 
-            WHERE c.user_id=
-            <cfqueryparam
-            value="#session.user_id#"
-            cfsqltype="cf_sql_integer">
+                WHERE c.user_id=
+                <cfqueryparam
+                value="#session.user_id#"
+                cfsqltype="cf_sql_integer">
 
-        </cfquery>
-
-
-        <cfif qCart.recordCount EQ 0>
-
-            <cfset result.status=false>
-            <cfset result.message=
-            "Cart is empty">
-
-            <cfreturn result>
-
-        </cfif>
+            </cfquery>
 
 
-        <cfloop query="qCart">
-
-            <cfif quantity GT stock>
+            <cfif qCart.recordCount EQ 0>
 
                 <cfset result.status=false>
-
                 <cfset result.message=
-                "Not enough stock">
+                "Cart is empty">
 
                 <cfreturn result>
 
             </cfif>
 
 
+            <cfloop query="qCart">
+
+                <cfif quantity GT stock>
+
+                    <cfset result.status=false>
+
+                    <cfset result.message=
+                    "Not enough stock">
+
+                    <cfreturn result>
+
+                </cfif>
+
+
+                <cfquery datasource="ecommerce">
+
+                    INSERT INTO orders(
+
+                    user_id,
+                    product_id,
+                    quantity,
+                    price,
+                    total_price
+
+                    )
+
+                    VALUES(
+
+                    <cfqueryparam
+                    value="#session.user_id#"
+                    cfsqltype="cf_sql_integer">,
+
+                    <cfqueryparam
+                    value="#product_id#"
+                    cfsqltype="cf_sql_integer">,
+
+                    <cfqueryparam
+                    value="#quantity#"
+                    cfsqltype="cf_sql_integer">,
+
+                    <cfqueryparam
+                    value="#price#"
+                    cfsqltype="cf_sql_decimal">,
+
+                    <cfqueryparam
+                    value="#quantity*price#"
+                    cfsqltype="cf_sql_decimal">
+
+                    )
+
+                </cfquery>
+
+
+
+                <cfquery datasource="ecommerce">
+
+                    UPDATE products
+
+                    SET stock=
+                    stock-
+                    <cfqueryparam
+                    value="#quantity#"
+                    cfsqltype="cf_sql_integer">
+
+                    WHERE product_id=
+                    <cfqueryparam
+                    value="#product_id#"
+                    cfsqltype="cf_sql_integer">
+
+                </cfquery>
+
+
+                <cfquery datasource="ecommerce">
+
+                    UPDATE products
+
+                    SET status='outofstock'
+
+                    WHERE product_id=
+                    <cfqueryparam
+                    value="#product_id#"
+                    cfsqltype="cf_sql_integer">
+
+                    AND stock<=0
+
+                </cfquery>
+
+            </cfloop>
+
+
+
             <cfquery datasource="ecommerce">
 
-                INSERT INTO orders(
+                DELETE FROM cart
 
+                WHERE user_id=
+                <cfqueryparam
+                value="#session.user_id#"
+                cfsqltype="cf_sql_integer">
+
+            </cfquery>
+
+
+            <cfset result.status=true>
+
+            <cfset result.message=
+            "Purchase successful">
+
+
+        <cfcatch>
+
+            <cfset result.status=false>
+
+            <cfset result.message=
+            cfcatch.message>
+
+            <cfset result.detail=
+            cfcatch.detail>
+
+        </cfcatch>
+
+        </cftry>
+
+        <cfreturn result>
+
+</cffunction>
+
+<cffunction name="buyNow"
+access="remote"
+returntype="struct"
+returnformat="json">
+
+    <cfargument name="product_id" required="true">
+
+    <cfset var result = {}>
+
+    <cftry>
+
+        <!--- GET PRODUCT --->
+        <cfquery name="qProduct" datasource="ecommerce">
+
+            SELECT
+                price,
+                stock
+            FROM products
+
+            WHERE product_id =
+
+            <cfqueryparam
+                value="#arguments.product_id#"
+                cfsqltype="cf_sql_integer">
+
+        </cfquery>
+
+        <!--- CHECK STOCK --->
+        <cfif qProduct.stock LTE 0>
+
+            <cfset result.STATUS = false>
+            <cfset result.MESSAGE = "Product is out of stock">
+
+            <cfreturn result>
+
+        </cfif>
+
+        <!--- INSERT ORDER --->
+        <cfquery datasource="ecommerce">
+
+            INSERT INTO orders
+            (
                 user_id,
                 product_id,
                 quantity,
                 price,
-                total_price
+                total_price,
+                order_date
+            )
 
-                )
-
-                VALUES(
-
-                <cfqueryparam
-                value="#session.user_id#"
-                cfsqltype="cf_sql_integer">,
+            VALUES
+            (
 
                 <cfqueryparam
-                value="#product_id#"
-                cfsqltype="cf_sql_integer">,
+                    value="#session.user_id#"
+                    cfsqltype="cf_sql_integer">,
 
                 <cfqueryparam
-                value="#quantity#"
-                cfsqltype="cf_sql_integer">,
+                    value="#arguments.product_id#"
+                    cfsqltype="cf_sql_integer">,
+
+                1,
 
                 <cfqueryparam
-                value="#price#"
-                cfsqltype="cf_sql_decimal">,
+                    value="#qProduct.price#"
+                    cfsqltype="cf_sql_decimal">,
 
                 <cfqueryparam
-                value="#quantity*price#"
-                cfsqltype="cf_sql_decimal">
+                    value="#qProduct.price#"
+                    cfsqltype="cf_sql_decimal">,
 
-                )
+                GETDATE()
 
-            </cfquery>
-
-
-
-            <cfquery datasource="ecommerce">
-
-                UPDATE products
-
-                SET stock=
-                stock-
-                <cfqueryparam
-                value="#quantity#"
-                cfsqltype="cf_sql_integer">
-
-                WHERE product_id=
-                <cfqueryparam
-                value="#product_id#"
-                cfsqltype="cf_sql_integer">
-
-            </cfquery>
-
-
-            <cfquery datasource="ecommerce">
-
-                UPDATE products
-
-                SET status='outofstock'
-
-                WHERE product_id=
-                <cfqueryparam
-                value="#product_id#"
-                cfsqltype="cf_sql_integer">
-
-                AND stock<=0
-
-            </cfquery>
-
-        </cfloop>
-
-
-
-        <cfquery datasource="ecommerce">
-
-            DELETE FROM cart
-
-            WHERE user_id=
-            <cfqueryparam
-            value="#session.user_id#"
-            cfsqltype="cf_sql_integer">
+            )
 
         </cfquery>
 
+        <!--- DECREASE STOCK --->
+        <cfquery datasource="ecommerce">
 
-        <cfset result.status=true>
+            UPDATE products
 
-        <cfset result.message=
-        "Purchase successful">
+            SET stock = stock - 1
 
+            WHERE product_id =
 
-    <cfcatch>
+            <cfqueryparam
+                value="#arguments.product_id#"
+                cfsqltype="cf_sql_integer">
 
-        <cfset result.status=false>
+        </cfquery>
 
-        <cfset result.message=
-        cfcatch.message>
+        <cfset result.STATUS = true>
+        <cfset result.MESSAGE = "Purchase completed successfully">
 
-        <cfset result.detail=
-        cfcatch.detail>
+        <cfcatch>
 
-    </cfcatch>
+            <cfset result.STATUS = false>
+            <cfset result.MESSAGE = cfcatch.message>
+
+        </cfcatch>
 
     </cftry>
 
