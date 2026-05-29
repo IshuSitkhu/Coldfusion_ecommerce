@@ -675,6 +675,7 @@
             <cfset grandTotal += (quantity * price)>
         </cfloop>
 
+        <!--- COUPON VALIDATION (IMPORTANT PART) --->
         <cfif len(arguments.coupon_id)>
 
             <cfquery name="qCoupon" datasource="ecommerce">
@@ -720,31 +721,22 @@
                 <cfreturn result>
             </cfif>
 
+            <!--- INSERT ORDER (NO DISCOUNT HERE - FULL PRICE PER ITEM) --->
             <cfquery datasource="ecommerce">
-            INSERT INTO orders(
-                user_id,
-                product_id,
-                quantity,
-                price,
-                total_price,
-                discount_amount,
-                final_total
-            )
-            VALUES(
-                <cfqueryparam value="#session.user_id#" cfsqltype="cf_sql_integer">,
-                <cfqueryparam value="#product_id#" cfsqltype="cf_sql_integer">,
-                <cfqueryparam value="#quantity#" cfsqltype="cf_sql_integer">,
-                <cfqueryparam value="#price#" cfsqltype="cf_sql_decimal">,
-
-                <!--- original total --->
-                <cfqueryparam value="#quantity * price#" cfsqltype="cf_sql_decimal">,
-
-                <!--- discount per product row (optional but fine) --->
-                <cfqueryparam value="#discount#" cfsqltype="cf_sql_decimal">,
-
-                <!--- final total --->
-                <cfqueryparam value="#finalTotal#" cfsqltype="cf_sql_decimal">
-            )
+                INSERT INTO orders(
+                    user_id,
+                    product_id,
+                    quantity,
+                    price,
+                    total_price
+                )
+                VALUES(
+                    <cfqueryparam value="#session.user_id#" cfsqltype="cf_sql_integer">,
+                    <cfqueryparam value="#product_id#" cfsqltype="cf_sql_integer">,
+                    <cfqueryparam value="#quantity#" cfsqltype="cf_sql_integer">,
+                    <cfqueryparam value="#price#" cfsqltype="cf_sql_decimal">,
+                    <cfqueryparam value="#quantity * price#" cfsqltype="cf_sql_decimal">
+                )
             </cfquery>
 
             <!--- REDUCE STOCK --->

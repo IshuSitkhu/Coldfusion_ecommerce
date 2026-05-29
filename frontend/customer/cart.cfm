@@ -24,6 +24,17 @@
     <cfset grandTotal += total_price>
 </cfoutput>
 
+<cfquery name="qCoupons" datasource="ecommerce">
+    SELECT 
+        coupon_id,
+        title,
+        min_amount,
+        discount_amount,
+        is_active
+    FROM coupons
+    WHERE is_active = 1
+</cfquery>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -163,24 +174,95 @@
 
                 <hr>
 
-                <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mt-3 mb-3 fw-semibold"> Available Coupons</h5>
 
-                    <div class="total-box">
+                <div class="row g-3">
 
-                        Total:
-                        Rs <span id="grandTotal">
-                        <cfoutput>#grandTotal#</cfoutput>
-                        </span>
+                <cfoutput query="qCoupons">
+
+                    <cfset isEligible = (grandTotal GTE min_amount)>
+
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+
+                        <div class="card border-0 shadow-sm h-100 coupon-card position-relative">
+
+                            <!-- Top Ribbon -->
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <cfif isEligible>
+                                    <span class="badge bg-success px-2 py-1">Available</span>
+                                <cfelse>
+                                    <span class="badge bg-secondary px-2 py-1">Locked</span>
+                                </cfif>
+                            </div>
+
+                            <div class="card-body text-center">
+
+                                <!-- Coupon Title -->
+                                <h6 class="fw-bold text-uppercase mb-2 text-primary">
+                                    #title#
+                                </h6>
+
+                                <!-- Discount Circle -->
+                                <div class="discount-circle mx-auto mb-2">
+                                    <span class="fw-bold">Rs #discount_amount#</span><br>
+                                    <small class="text-muted">OFF</small>
+                                </div>
+
+                                <!-- Min Order -->
+                                <p class="mb-2 text-muted small">
+                                    Min. order: <strong>Rs #min_amount#</strong>
+                                </p>
+
+                                <!-- Apply Button -->
+                                <button
+                                    class="btn btn-dark btn-sm w-100 rounded-pill"
+                                    onclick="selectCoupon(#coupon_id#, #discount_amount#)"
+                                    <cfif NOT isEligible>disabled</cfif>
+                                >
+                                    Apply Coupon
+                                </button>
+
+                            </div>
+                        </div>
 
                     </div>
 
-                    <button
-                        class="btn btn-success"
-                        onclick="checkout()">
+                </cfoutput>
 
-                        Proceed To Checkout
+                </div>
 
-                    </button>
+                
+
+                <div class="card shadow-sm mt-4">
+
+                    <div class="card-body">
+
+                        <h5 class="mb-3">Order Summary</h5>
+
+                        <div class="d-flex justify-content-between">
+                            <span>Total</span>
+                            <span>Rs <cfoutput>#grandTotal#</cfoutput></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between text-danger">
+                            <span>Discount</span>
+                            <span>- Rs <span id="discountAmount">0</span></span>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between fw-bold fs-5">
+                            <span>Final Total</span>
+                            <span id="finalTotal" data-original="<cfoutput>#grandTotal#</cfoutput>">
+                                <cfoutput>#grandTotal#</cfoutput>
+                            </span>
+                        </div>
+
+                        <button class="btn btn-success w-100 mt-3" onclick="checkout()">
+                            Proceed To Checkout
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -194,6 +276,9 @@
 
 
 <script>
+
+let selectedCouponId = null;
+let selectedDiscount = 0;
 
 console.log("CART PAGE LOADED");
 
@@ -259,6 +344,9 @@ function increaseQty(cart_id){
 
             console.log("INCREASE RESPONSE:",res);
 
+            selectedCouponId = null;
+            selectedDiscount = 0;
+
             location.reload();
 
         }
@@ -286,6 +374,9 @@ function decreaseQty(cart_id){
 
             console.log("DECREASE RESPONSE:",res);
 
+            selectedCouponId = null;
+            selectedDiscount = 0;
+
             location.reload();
 
         }
@@ -297,80 +388,51 @@ function decreaseQty(cart_id){
 
 function checkout(){
 
-    console.log("CHECKOUT CLICKED");
-
     Swal.fire({
-
-        title:"Confirm Purchase?",
-        text:"Do you want to continue?",
-        icon:"question",
-        showCancelButton:true,
-        confirmButtonText:"Yes"
-
-    }).then((result)=>{
+        title: "Confirm Purchase?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes"
+    }).then((result) => {
 
         if(result.isConfirmed){
 
-            console.log("USER CONFIRMED CHECKOUT");
-
             $.ajax({
+                url: "/ecommerce/api/Product.cfc?method=checkout",
+                type: "POST",
+                dataType: "json",
 
-                url:"/ecommerce/api/Product.cfc?method=checkout",
-                type:"POST",
-                dataType:"json",
+                data: {
+                    coupon_id: selectedCouponId,
+                    discount_amount: selectedDiscount
+                },
 
-                success:function(res){
+                success: function(res){
 
-                    console.log("CHECKOUT RESPONSE:",res);
-
-                    let status=res.STATUS ?? res.status;
-                    let message=res.MESSAGE ?? res.message;
-
-                    console.log("STATUS:",status);
-                    console.log("MESSAGE:",message);
-
-                    if(status){
+                    if(res.STATUS){
 
                         Swal.fire({
-
-                            icon:"success",
-                            title:"Purchase Completed",
-                            text:message
-
-                        }).then(()=>{
-
-                            window.location=
-                            "../customer/purchaseHistory.cfm";
-
+                            icon: "success",
+                            title: "Success",
+                            text: res.MESSAGE
+                        }).then(() => {
+                            window.location = "../customer/purchaseHistory.cfm";
                         });
 
-                    }
-                    else{
+                    } else {
 
                         Swal.fire({
-
-                            icon:"error",
-                            title:"Failed",
-                            text:message
-
+                            icon: "error",
+                            title: "Failed",
+                            text: res.MESSAGE
                         });
 
                     }
 
                 },
 
-                error:function(xhr){
-
-                    console.log("CHECKOUT ERROR:",
-                    xhr.responseText);
-
-                    Swal.fire({
-
-                        icon:"error",
-                        title:"Server Error"
-
-                    });
-
+                error: function(xhr){
+                    console.log(xhr.responseText);
                 }
 
             });
@@ -379,6 +441,26 @@ function checkout(){
 
     });
 
+}
+
+function selectCoupon(coupon_id, discount_amount){
+
+    selectedCouponId = coupon_id;
+    selectedDiscount = parseFloat(discount_amount);
+
+    let grandTotal = parseFloat($("#finalTotal").attr("data-original"));
+
+    let final = grandTotal - selectedDiscount;
+    if(final < 0) final = 0;
+
+    $("#discountAmount").text(selectedDiscount);
+    $("#finalTotal").text(final);
+
+    Swal.fire({
+        icon: "success",
+        title: "Coupon Applied",
+        text: "Rs " + selectedDiscount + " discount applied"
+    });
 }
 
 </script>
