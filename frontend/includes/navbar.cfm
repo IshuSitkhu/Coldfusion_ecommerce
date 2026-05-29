@@ -37,6 +37,12 @@
                     </li>
 
                     <li class="nav-item">
+                        <a class="nav-link" href="../admin/coupons.cfm">
+                            Coupons
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
                         <a class="nav-link" href="../admin/users.cfm">
                             Users
                         </a>
@@ -92,9 +98,7 @@
                         <a class="nav-link" href="../customer/cart.cfm">
                             Cart
                         </a>
-                    </li>
-
-                    
+                    </li>                    
 
                     <li class="nav-item">
                         <a class="nav-link" href="../customer/purchaseHistory.cfm">
