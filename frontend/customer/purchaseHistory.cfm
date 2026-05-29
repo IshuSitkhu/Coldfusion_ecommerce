@@ -30,7 +30,6 @@
 
 </cfquery>
 
-<!--- SAFE GRAND TOTAL CALCULATION (FIX FOR ERROR) --->
 <cfset grandTotal = 0>
 
 <cfoutput query="qOrders">
@@ -113,7 +112,6 @@
 
                             <td>Rs #total_price#</td>
 
-                            <!-- DISCOUNT SAFE -->
                             <td class="text-danger">
                                 <cfif NOT len(trim(discount_amount)) OR discount_amount EQ 0>
                                     -

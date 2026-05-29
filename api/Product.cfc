@@ -538,7 +538,6 @@
 
         <cfelse>
 
-            <!--- OPTIONAL: CHECK PRODUCT STOCK --->
             <cfquery name="qProduct" datasource="ecommerce">
                 SELECT stock
                 FROM products
