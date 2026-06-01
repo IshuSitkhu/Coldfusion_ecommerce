@@ -501,17 +501,24 @@ function openCouponModal(){
             data.forEach(c => {
 
                 html += `
-                    <div class="border p-2 mb-2">
-                        <b>${c.TITLE}</b><br>
-                        Discount: ${c.DISCOUNT_AMOUNT}
+                <div class="border rounded p-3 mb-2 shadow-sm">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-1">${c.TITLE}</h6>
+                            <small class="text-success fw-bold">
+                                Discount: Rs. ${c.DISCOUNT_AMOUNT}
+                            </small>
+                        </div>
 
-                        <br><br>
-
-                        <button class="btn btn-sm btn-primary"
-                        onclick="applyCoupon(${c.DISCOUNT_AMOUNT}, ${c.MIN_AMOUNT})">
-                        Apply
-                        </button>
+                        <div class="col-md-4 text-end">
+                            <button
+                                class="btn btn-success btn-sm px-4"
+                                onclick="applyCoupon(${c.DISCOUNT_AMOUNT}, ${c.MIN_AMOUNT})">
+                                Apply Coupon
+                            </button>
+                        </div>
                     </div>
+                </div>
                 `;
             });
 
