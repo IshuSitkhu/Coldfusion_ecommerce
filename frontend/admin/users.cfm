@@ -15,47 +15,96 @@
 
 <div class="container mt-4">
 
-<div class="row mb-3">
+    <div class="row">
 
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center">
-                <div class="card-body">
-                    <h6>Total Products</h6>
-                    <h4 id="totalProducts">0</h4>
+        <div class="col-md-4">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    Add Users
+                </div>
+
+                <div class="card-body p-4">
+
+                    <form id="registerForm">
+
+                        <div class="mb-3">
+                            <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="text" name="username" class="form-control" placeholder="Username" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="text" name="address" class="form-control" placeholder="Address" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="email" name="email" class="form-control" placeholder="Email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="password" name="password" class="form-control" placeholder="Password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <select name="role" class="form-select" required>
+                                <option value="customer">Customer</option>
+                                <option value="seller">Seller</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Add user
+                        </button>
+
+                    </form>
+
                 </div>
             </div>
-        </div>
-
-    </div>
-
-    <div class="card shadow-sm mb-3">
-        <div class="card-header bg-dark text-white">
-            All Users (Admin Control Panel)
-        </div>
-
-        <div class="card-body table-responsive">
-
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Address</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody id="adminUserTable">
-                    <tr>
-                        <td colspan="5" class="text-center">Loading...</td>
-                    </tr>
-                </tbody>
-
-            </table>
 
         </div>
+
+        <!-- RIGHT: TABLE -->
+        <div class="col-md-8">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    All Users
+                </div>
+
+                <div class="card-body table-responsive">
+
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="adminUserTable">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
 </div>
@@ -122,6 +171,8 @@ function loadUsers() {
 });
 }
 
+
+
 $(document).ready(function() {
     loadUsers();
 });
@@ -167,6 +218,62 @@ function toggleStatus(userId) {
         }
     });
 }
+
+$("#registerForm").submit(function(e){
+
+    e.preventDefault();
+
+    $.ajax({
+
+        url: "/ecommerce/api/User.cfc?method=addUsers",
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "json",
+
+        success: function(res){
+
+            console.log("ADD USER RESPONSE:", res);
+
+            if(res.STATUS){
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: res.MESSAGE
+                });
+
+                $("#registerForm")[0].reset();
+
+                loadUsers();
+
+            } else {
+
+                console.log("DETAIL:", res.DETAIL);
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: res.MESSAGE + "\n" + (res.DETAIL || "")
+                });
+
+            }
+        },
+
+        error: function(xhr){
+
+            console.log("AJAX ERROR");
+            console.log(xhr.responseText);
+
+            Swal.fire({
+                icon: "error",
+                title: "Server Error",
+                text: "Check browser console for details"
+            });
+        }
+
+    });
+
+});
 
 </script>
 
