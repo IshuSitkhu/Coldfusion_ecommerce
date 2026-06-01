@@ -335,7 +335,7 @@ function openCouponModal() {
                 `;
             } else {
                 data.forEach(c => {
-                    html += `
+                    html += `                       
                         <div class="border p-2 mb-2">
                             <h6 class="fw-bold text-uppercase mb-2 text-primary">
                                 ${c.TITLE}
@@ -481,6 +481,7 @@ function addToCart(product_id){
       </div>
 
       <div class="modal-body">
+      <h4>Available coupons for you.</h4> 
         <div id="couponList"></div>
       </div>
 
