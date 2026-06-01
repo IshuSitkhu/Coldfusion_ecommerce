@@ -791,11 +791,13 @@
 </cffunction>
 
 <cffunction name="buyNow"
-access="remote"
-returntype="struct"
-returnformat="json">
+        access="remote"
+        returntype="struct"
+        returnformat="json">
 
-    <cfargument name="product_id" required="true">
+        <cfargument name="product_id" required="true">
+        <cfargument name="discount" required="false" default="0">
+        <cfargument name="final_price" required="false" default="0">
 
     <cfset var result = {}>
 
@@ -827,40 +829,36 @@ returnformat="json">
 
         <cfquery datasource="ecommerce">
 
-            INSERT INTO orders
-            (
-                user_id,
-                product_id,
-                quantity,
-                price,
-                total_price,
-                order_date
-            )
+        INSERT INTO orders
+        (
+            user_id,
+            product_id,
+            quantity,
+            price,
+            total_price,
+            discount_amount,
+            final_total,
+            order_date
+        )
 
-            VALUES
-            (
+        VALUES
+        (
+            <cfqueryparam value="#session.user_id#" cfsqltype="cf_sql_integer">,
 
-                <cfqueryparam
-                    value="#session.user_id#"
-                    cfsqltype="cf_sql_integer">,
+            <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">,
 
-                <cfqueryparam
-                    value="#arguments.product_id#"
-                    cfsqltype="cf_sql_integer">,
+            1,
 
-                1,
+            <cfqueryparam value="#qProduct.price#" cfsqltype="cf_sql_decimal">,
 
-                <cfqueryparam
-                    value="#qProduct.price#"
-                    cfsqltype="cf_sql_decimal">,
+            <cfqueryparam value="#qProduct.price#" cfsqltype="cf_sql_decimal">,
 
-                <cfqueryparam
-                    value="#qProduct.price#"
-                    cfsqltype="cf_sql_decimal">,
+            <cfqueryparam value="#arguments.discount#" cfsqltype="cf_sql_decimal">,
 
-                GETDATE()
+            <cfqueryparam value="#arguments.final_price#" cfsqltype="cf_sql_decimal">,
 
-            )
+            GETDATE()
+        )
 
         </cfquery>
 

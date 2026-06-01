@@ -367,8 +367,6 @@ function openCouponModal() {
     });
 }
 
-
-
 function applyCoupon(discount, minAmount){
 
     if(PRODUCT_PRICE < minAmount){
@@ -413,6 +411,115 @@ $("#confirmBuyBtn").on("click", function(){
     });
 
 });
+
+function confirmBuy() {
+
+    console.log("Sending Purchase Request:", {
+        product_id: SELECTED_PRODUCT_ID,
+        discount: DISCOUNT,
+        final_price: FINAL_PRICE
+    });
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=buyNow",
+        type: "POST",
+        dataType: "json", 
+        data: {
+            product_id: SELECTED_PRODUCT_ID,
+            discount: DISCOUNT,
+            final_price: FINAL_PRICE
+        },
+
+success: function(res) {
+
+    console.log("Raw Response:", res);
+    console.log("TYPE:", typeof res);
+
+    if (typeof res === "string") {
+        res = JSON.parse(res);
+    }
+
+    console.log("Parsed:", res);
+    console.log("STATUS:", res.STATUS);
+
+    $("#buyModal").modal("hide");
+
+    if (res.STATUS === true) {
+
+        Swal.fire({
+            icon: "success",
+            title: "Purchase Successful!",
+            text: res.MESSAGE
+        }).then(() => {
+            window.location = "../customer/purchaseHistory.cfm";
+        });
+
+    } else {
+
+        Swal.fire({
+            icon: "error",
+            title: "Purchase Failed",
+            text: res.MESSAGE || "Something went wrong."
+        });
+
+    }
+},
+
+        error: function(xhr, status, error) {
+
+            console.error("AJAX Error");
+            console.error("Status:", status);
+            console.error("Error:", error);
+            console.error("Response Text:", xhr.responseText);
+
+            $("#buyModal").modal("hide");
+
+            Swal.fire({
+                icon: "error",
+                title: "Server Error",
+                text: "Unable to complete purchase. Please try again later."
+            });
+        }
+    });
+}
+
+function openCouponModal(){
+
+    $("#couponModal").modal("show");
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getCouponsForProduct",
+        data: { product_id: SELECTED_PRODUCT_ID },
+        dataType: "json",
+
+        success: function(res){
+
+            let data = res.DATA;
+
+            let html = "";
+
+            data.forEach(c => {
+
+                html += `
+                    <div class="border p-2 mb-2">
+                        <b>${c.TITLE}</b><br>
+                        Discount: ${c.DISCOUNT_AMOUNT}
+
+                        <br><br>
+
+                        <button class="btn btn-sm btn-primary"
+                        onclick="applyCoupon(${c.DISCOUNT_AMOUNT}, ${c.MIN_AMOUNT})">
+                        Apply
+                        </button>
+                    </div>
+                `;
+            });
+
+            $("#couponList").html(html);
+        }
+    });
+}
+
 
 function addToCart(product_id){
 
