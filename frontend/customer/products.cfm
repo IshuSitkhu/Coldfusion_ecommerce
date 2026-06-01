@@ -228,7 +228,7 @@ function loadProducts(){
                             Add to Cart
                         </button>
 
-                        <button class="btn btn-success btn-sm" onclick="buyNow(${p.PRODUCT_ID})">
+                        <button class="btn btn-success btn-sm" onclick="buyNow(${p.PRODUCT_ID}, ${p.PRICE})">
                             Buy Now
                         </button>
                     </div>
@@ -291,56 +291,28 @@ $("#resetBtn").on("click", function(){
     loadProducts();
 });
 
+let PRODUCT_PRICE = 0;
 let SELECTED_PRODUCT_ID = 0;
+let DISCOUNT = 0;
+let FINAL_PRICE = 0;
 
-function buyNow(product_id){
+function buyNow(product_id, price){
+
+    console.log("DEBUG PRICE:", price);
 
     SELECTED_PRODUCT_ID = product_id;
+    PRODUCT_PRICE = price || 0;
 
-    $("#couponModal").modal("show");
+    DISCOUNT = 0;
+    FINAL_PRICE = PRODUCT_PRICE;
 
-    $("#couponList").html("Loading coupons...");
+    $("#mTotal").text(PRODUCT_PRICE);
+    $("#mDiscount").text(0);
+    $("#mFinal").text(FINAL_PRICE);
 
-    $.ajax({
-        url: "/ecommerce/api/Product.cfc?method=getCouponsForProduct",
-        type: "GET",
-        data: {
-            product_id: product_id
-        },
-        dataType: "json",
-
-        success: function(res){
-
-            console.log("COUPON RESPONSE:", res);
-
-            let data = res.DATA;
-
-            if (!Array.isArray(data)) {
-                data = [];
-            }
-
-            if(!res.STATUS || data.length === 0){
-                $("#couponList").html("No coupons available.");
-                return;
-            }
-
-            let html = "";
-
-            data.forEach(function(c){
-
-            html += `
-                <div class="border p-2 mb-2 rounded">
-                    <h6>${c.TITLE}</h6>
-                    <div>Min Amount: Rs ${c.MIN_AMOUNT}</div>
-                    <div>Discount: Rs ${c.DISCOUNT_AMOUNT}</div>
-                </div>
-            `;
-        });
-
-            $("#couponList").html(html);
-        }
-    });
+    $("#buyModal").modal("show");
 }
+
 
 $("#confirmBuyBtn").on("click", function(){
 
@@ -417,26 +389,50 @@ function addToCart(product_id){
 }
 </script>
 
-<div class="modal fade" id="couponModal" tabindex="-1">
+<div class="modal fade" id="buyModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title">Available Coupons</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title">Checkout</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
       <div class="modal-body">
-        <div id="couponList">Loading...</div>
+
+        <div class="border p-2 mb-2">
+            <div>Total: Rs <span id="mTotal"></span></div>
+            <div>Discount: Rs <span id="mDiscount">0</span></div>
+            <div><b>Final: Rs <span id="mFinal"></span></b></div>
+        </div>
+
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn btn-success" id="confirmBuyBtn">Confirm Buy</button>
+        <button class="btn btn-warning" onclick="openCouponModal()">Apply Coupon</button>
+        <button class="btn btn-success" onclick="confirmBuy()">Buy Now</button>
       </div>
 
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="couponModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>Select Coupon</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="couponList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
