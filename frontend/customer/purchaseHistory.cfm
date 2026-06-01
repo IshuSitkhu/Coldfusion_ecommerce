@@ -138,7 +138,7 @@
 
                                     <span class="badge bg-danger">Returned</span>
 
-                                <cfelseif daysPassed LTE 7>
+                                <cfelseif daysPassed LTE 2>
 
                                     <button
                                         class="btn btn-warning btn-sm"
