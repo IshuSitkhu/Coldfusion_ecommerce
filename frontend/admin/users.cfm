@@ -43,6 +43,7 @@
                         <th>Role</th>
                         <th>Address</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
 
@@ -90,6 +91,15 @@ function loadUsers() {
 
         res.DATA.forEach(function(u) {
 
+
+                let btn = "";
+
+            if (u.STATUS === "active") {
+                btn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${u.USER_ID})">Disable</button>`;
+            } else {
+                btn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${u.USER_ID})">Enable</button>`;
+            }
+
             rows += `
                 <tr>
                     <td>${u.USERNAME}</td>
@@ -97,6 +107,7 @@ function loadUsers() {
                     <td>${u.ROLE}</td>
                     <td>${u.ADDRESS}</td>
                     <td>${u.STATUS}</td>
+                    <td>${btn}</td>
                 </tr>
             `;
         });
@@ -114,6 +125,48 @@ function loadUsers() {
 $(document).ready(function() {
     loadUsers();
 });
+function toggleStatus(userId) {
+
+    $.ajax({
+        url: "/ecommerce/api/User.cfc?method=toggleUserStatus",
+        type: "POST",
+        dataType: "json",
+        data: {
+            user_id: userId
+        },
+
+        success: function(res){
+
+            console.log("TOGGLE RESPONSE:", res);
+
+            let status = res.STATUS;  
+            let message = res.MESSAGE;
+
+            if(status === true || status === "true"){
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: message
+                });
+
+                loadUsers();
+
+            } else {
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed",
+                    text: message || "Something went wrong"
+                });
+            }
+        },
+
+        error: function(){
+            Swal.fire("Error", "Failed to update status", "error");
+        }
+    });
+}
 
 </script>
 
