@@ -141,13 +141,19 @@ function loadUsers() {
         res.DATA.forEach(function(u) {
 
 
-                let btn = "";
+            let statusBtn = "";
 
             if (u.STATUS === "active") {
-                btn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${u.USER_ID})">Disable</button>`;
+                statusBtn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${u.USER_ID})">Disable</button>`;
             } else {
-                btn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${u.USER_ID})">Enable</button>`;
+                statusBtn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${u.USER_ID})">Enable</button>`;
             }
+
+            let btn = `
+                <button class="btn btn-sm btn-primary" onclick="editUser(${u.USER_ID})">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.USER_ID})">Delete</button>
+                ${statusBtn}
+            `;
 
             rows += `
                 <tr>
@@ -161,7 +167,9 @@ function loadUsers() {
             `;
         });
 
+
         $("#adminUserTable").html(rows);
+
     },
 
     error: function(xhr) {
@@ -223,57 +231,128 @@ $("#registerForm").submit(function(e){
 
     e.preventDefault();
 
-    $.ajax({
+    let editId = $(this).data("edit-id");
 
-        url: "/ecommerce/api/User.cfc?method=addUsers",
+    let url = editId
+        ? "/ecommerce/api/User.cfc?method=updateUser"
+        : "/ecommerce/api/User.cfc?method=addUsers";
+
+    let data = $(this).serialize();
+
+    if (editId) {
+        data += "&user_id=" + editId;
+    }
+
+    $.ajax({
+        url: url,
         type: "POST",
-        data: $(this).serialize(),
+        data: data,
         dataType: "json",
 
-        success: function(res){
+        success: function(res) {
 
-            console.log("ADD USER RESPONSE:", res);
+            if (res.STATUS) {
 
-            if(res.STATUS){
-
-                Swal.fire({
-                    icon: "success",
-                    title: "Success",
-                    text: res.MESSAGE
-                });
+                Swal.fire("Success", res.MESSAGE, "success");
 
                 $("#registerForm")[0].reset();
+                $("#registerForm").removeData("edit-id");
+
+                $("button[type='submit']").text("Add user");
+
+                $("input[name='password']").prop("required", true);
 
                 loadUsers();
 
             } else {
-
-                console.log("DETAIL:", res.DETAIL);
-
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: res.MESSAGE + "\n" + (res.DETAIL || "")
-                });
-
+                Swal.fire("Error", res.MESSAGE, "error");
             }
-        },
 
-        error: function(xhr){
-
-            console.log("AJAX ERROR");
-            console.log(xhr.responseText);
-
-            Swal.fire({
-                icon: "error",
-                title: "Server Error",
-                text: "Check browser console for details"
-            });
         }
-
     });
 
 });
+
+function deleteUser(userId) {
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "This user will be permanently deleted!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!"
+    }).then((result) => {
+
+        if (result.isConfirmed) {
+
+            $.ajax({
+                url: "/ecommerce/api/User.cfc?method=deleteUser",
+                type: "POST",
+                data: { user_id: userId },
+                dataType: "json",
+
+                success: function(res) {
+
+                    if (res.STATUS) {
+
+                        Swal.fire("Deleted!", res.MESSAGE, "success");
+                        loadUsers();
+
+                    } else {
+                        Swal.fire("Error", res.MESSAGE, "error");
+                    }
+
+                },
+
+                error: function() {
+                    Swal.fire("Error", "Server error", "error");
+                }
+
+            });
+
+        }
+    });
+}
+
+function editUser(userId) {
+
+    $.ajax({
+        url: "/ecommerce/api/User.cfc?method=getUserById",
+        type: "GET",
+        data: { user_id: userId },
+        dataType: "json",
+
+        success: function(res) {
+
+            if (res.STATUS) {
+
+                let u = res.DATA;
+
+                $("input[name='first_name']").val(u.FIRST_NAME);
+                $("input[name='last_name']").val(u.LAST_NAME);
+                $("input[name='username']").val(u.USERNAME);
+                $("input[name='address']").val(u.ADDRESS);
+                $("input[name='email']").val(u.EMAIL);
+                $("select[name='role']").val(u.ROLE);
+                $("input[name='password']").val("").prop("required", false);
+                $("button[type='submit']").text("Update User");
+
+                $("#registerForm").data("edit-id", u.USER_ID);
+
+                $("button[type='submit']").text("Update User");
+
+            } else {
+                Swal.fire("Error", res.MESSAGE, "error");
+            }
+
+        }
+    });
+
+}
+
+
 
 </script>
 
