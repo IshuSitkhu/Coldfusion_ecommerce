@@ -62,6 +62,8 @@
         <div class="text-center text-muted">Loading products...</div>
     </div>
 
+    
+
 </div>
 
 <script>
@@ -289,71 +291,85 @@ $("#resetBtn").on("click", function(){
     loadProducts();
 });
 
+let SELECTED_PRODUCT_ID = 0;
+
 function buyNow(product_id){
 
-    Swal.fire({
-        title:"Buy this item now?",
-        icon:"question",
-        showCancelButton:true,
-        confirmButtonText:"Buy Now"
-    }).then((result)=>{
+    SELECTED_PRODUCT_ID = product_id;
 
-        if(result.isConfirmed){
+    $("#couponModal").modal("show");
 
-            $.ajax({
+    $("#couponList").html("Loading coupons...");
 
-                url:"/ecommerce/api/Product.cfc?method=buyNow",
-                type:"POST",
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getCouponsForProduct",
+        type: "GET",
+        data: {
+            product_id: product_id
+        },
+        dataType: "json",
 
-                data:{
-                    product_id:product_id
-                },
+        success: function(res){
 
-                dataType:"json",
+            console.log("COUPON RESPONSE:", res);
 
-                success:function(res){
+            let data = res.DATA;
 
-                    console.log(res);
+            if (!Array.isArray(data)) {
+                data = [];
+            }
 
-                    if(res.STATUS){
+            if(!res.STATUS || data.length === 0){
+                $("#couponList").html("No coupons available.");
+                return;
+            }
 
-                        Swal.fire({
-                            icon:"success",
-                            title:"Purchase Completed",
-                            text:res.MESSAGE
-                        }).then(()=>{
+            let html = "";
 
-                            window.location=
-                            "../customer/purchaseHistory.cfm";
+            data.forEach(function(c){
 
-                        });
+            html += `
+                <div class="border p-2 mb-2 rounded">
+                    <h6>${c.TITLE}</h6>
+                    <div>Min Amount: Rs ${c.MIN_AMOUNT}</div>
+                    <div>Discount: Rs ${c.DISCOUNT_AMOUNT}</div>
+                </div>
+            `;
+        });
 
-                    }
-                    else{
-
-                        Swal.fire({
-                            icon:"error",
-                            title:"Failed",
-                            text:res.MESSAGE
-                        });
-
-                    }
-
-                },
-
-                error:function(xhr){
-
-                    console.log(xhr.responseText);
-
-                }
-
-            });
-
+            $("#couponList").html(html);
         }
+    });
+}
 
+$("#confirmBuyBtn").on("click", function(){
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=buyNow",
+        type: "POST",
+        data: {
+            product_id: SELECTED_PRODUCT_ID
+        },
+        dataType: "json",
+
+        success: function(res){
+
+            $("#couponModal").modal("hide");
+
+            if(res.STATUS){
+
+                Swal.fire("Success", res.MESSAGE, "success");
+
+                window.location = "../customer/purchaseHistory.cfm";
+
+            } else {
+
+                Swal.fire("Error", res.MESSAGE, "error");
+            }
+        }
     });
 
-}
+});
 
 function addToCart(product_id){
 
@@ -401,5 +417,26 @@ function addToCart(product_id){
 }
 </script>
 
+<div class="modal fade" id="couponModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Available Coupons</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="couponList">Loading...</div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" id="confirmBuyBtn">Confirm Buy</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 </body>
 </html>

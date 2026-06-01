@@ -801,7 +801,6 @@ returnformat="json">
 
     <cftry>
 
-        <!--- GET PRODUCT --->
         <cfquery name="qProduct" datasource="ecommerce">
 
             SELECT
@@ -817,7 +816,6 @@ returnformat="json">
 
         </cfquery>
 
-        <!--- CHECK STOCK --->
         <cfif qProduct.stock LTE 0>
 
             <cfset result.STATUS = false>
@@ -827,7 +825,6 @@ returnformat="json">
 
         </cfif>
 
-        <!--- INSERT ORDER --->
         <cfquery datasource="ecommerce">
 
             INSERT INTO orders
@@ -867,7 +864,6 @@ returnformat="json">
 
         </cfquery>
 
-        <!--- DECREASE STOCK --->
         <cfquery datasource="ecommerce">
 
             UPDATE products
@@ -899,133 +895,186 @@ returnformat="json">
 </cffunction>
 
 <cffunction name="returnProduct"
-access="remote"
-returntype="struct"
-returnformat="json">
+        access="remote"
+        returntype="struct"
+        returnformat="json">
 
-    <cfargument name="order_id" required="true">
+        <cfargument name="order_id" required="true">
 
-    <cfset var result = {}>
+        <cfset var result = {}>
+
+        <cftry>
+            <cfquery name="qOrder" datasource="ecommerce">
+
+                SELECT
+                    order_id,
+                    product_id,
+                    quantity,
+                    order_date,
+                    return_status
+
+                FROM orders
+
+                WHERE order_id =
+
+                <cfqueryparam
+                    value="#arguments.order_id#"
+                    cfsqltype="cf_sql_integer">
+
+                AND user_id =
+
+                <cfqueryparam
+                    value="#session.user_id#"
+                    cfsqltype="cf_sql_integer">
+
+            </cfquery>
+
+            <cfif qOrder.recordCount EQ 0>
+
+                <cfset result.status = false>
+                <cfset result.message = "Order not found">
+
+                <cfreturn result>
+
+            </cfif>
+
+            <cfif qOrder.return_status EQ "returned">
+
+                <cfset result.status = false>
+                <cfset result.message = "Product already returned">
+
+                <cfreturn result>
+
+            </cfif>
+
+            <cfset daysPassed =
+            dateDiff("d", qOrder.order_date, now())>
+
+            <cfif daysPassed GT 7>
+
+                <cfset result.status = false>
+                <cfset result.message = "Return period expired">
+
+                <cfreturn result>
+
+            </cfif>
+
+            <cfquery datasource="ecommerce">
+
+                UPDATE orders
+
+                SET
+                    return_status = 'returned',
+                    return_date = GETDATE()
+
+                WHERE order_id =
+
+                <cfqueryparam
+                    value="#arguments.order_id#"
+                    cfsqltype="cf_sql_integer">
+
+            </cfquery>
+
+            <cfquery datasource="ecommerce">
+
+                UPDATE products
+
+                SET stock = stock +
+
+                <cfqueryparam
+                    value="#qOrder.quantity#"
+                    cfsqltype="cf_sql_integer">
+
+                WHERE product_id =
+
+                <cfqueryparam
+                    value="#qOrder.product_id#"
+                    cfsqltype="cf_sql_integer">
+
+            </cfquery>
+
+            <cfquery datasource="ecommerce">
+
+                UPDATE products
+
+                SET status = 'active'
+
+                WHERE product_id =
+
+                <cfqueryparam
+                    value="#qOrder.product_id#"
+                    cfsqltype="cf_sql_integer">
+
+            </cfquery>
+
+            <cfset result.status = true>
+            <cfset result.message = "Product returned successfully">
+
+        <cfcatch>
+
+            <cfset result.status = false>
+            <cfset result.message = cfcatch.message>
+            <cfset result.detail = cfcatch.detail>
+
+        </cfcatch>
+
+        </cftry>
+
+        <cfreturn result>
+
+</cffunction>
+
+<cffunction name="getCouponsForProduct" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="product_id" required="true">
+
+    <cfset var result = structNew()>
 
     <cftry>
-        <cfquery name="qOrder" datasource="ecommerce">
 
-            SELECT
-                order_id,
-                product_id,
-                quantity,
-                order_date,
-                return_status
-
-            FROM orders
-
-            WHERE order_id =
-
-            <cfqueryparam
-                value="#arguments.order_id#"
-                cfsqltype="cf_sql_integer">
-
-            AND user_id =
-
-            <cfqueryparam
-                value="#session.user_id#"
-                cfsqltype="cf_sql_integer">
-
+        <cfquery name="qProduct" datasource="ecommerce">
+            SELECT price
+            FROM products
+            WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
         </cfquery>
 
-        <cfif qOrder.recordCount EQ 0>
-
-            <cfset result.status = false>
-            <cfset result.message = "Order not found">
-
-            <cfreturn result>
-
-        </cfif>
-
-        <cfif qOrder.return_status EQ "returned">
-
-            <cfset result.status = false>
-            <cfset result.message = "Product already returned">
-
-            <cfreturn result>
-
-        </cfif>
-
-        <cfset daysPassed =
-        dateDiff("d", qOrder.order_date, now())>
-
-        <cfif daysPassed GT 7>
-
-            <cfset result.status = false>
-            <cfset result.message = "Return period expired">
-
-            <cfreturn result>
-
-        </cfif>
-
-        <cfquery datasource="ecommerce">
-
-            UPDATE orders
-
-            SET
-                return_status = 'returned',
-                return_date = GETDATE()
-
-            WHERE order_id =
-
-            <cfqueryparam
-                value="#arguments.order_id#"
-                cfsqltype="cf_sql_integer">
-
+        <cfquery name="qCoupons" datasource="ecommerce">
+            SELECT coupon_id, title, min_amount, discount_amount
+            FROM coupons
+            WHERE is_active = 1
+            AND min_amount <= <cfqueryparam value="#qProduct.price#" cfsqltype="cf_sql_decimal">
         </cfquery>
 
-        <cfquery datasource="ecommerce">
+        <cfset result.STATUS = true>
+        <cfset result.DATA = queryToArray(qCoupons)>
 
-            UPDATE products
-
-            SET stock = stock +
-
-            <cfqueryparam
-                value="#qOrder.quantity#"
-                cfsqltype="cf_sql_integer">
-
-            WHERE product_id =
-
-            <cfqueryparam
-                value="#qOrder.product_id#"
-                cfsqltype="cf_sql_integer">
-
-        </cfquery>
-
-        <cfquery datasource="ecommerce">
-
-            UPDATE products
-
-            SET status = 'active'
-
-            WHERE product_id =
-
-            <cfqueryparam
-                value="#qOrder.product_id#"
-                cfsqltype="cf_sql_integer">
-
-        </cfquery>
-
-        <cfset result.status = true>
-        <cfset result.message = "Product returned successfully">
-
-    <cfcatch>
-
-        <cfset result.status = false>
-        <cfset result.message = cfcatch.message>
-        <cfset result.detail = cfcatch.detail>
-
-    </cfcatch>
+        <cfcatch>
+            <cfset result.STATUS = false>
+            <cfset result.MESSAGE = cfcatch.message>
+            <cfset result.DETAIL = cfcatch.detail>
+        </cfcatch>
 
     </cftry>
 
     <cfreturn result>
 
+</cffunction>
+
+<cffunction name="queryToArray" access="private" returntype="array">
+    <cfargument name="q" required="true">
+
+    <cfset var arr = []>
+
+    <cfloop query="arguments.q">
+        <cfset arrayAppend(arr, {
+            coupon_id = coupon_id,
+            title = title,
+            min_amount = min_amount,
+            discount_amount = discount_amount
+        })>
+    </cfloop>
+
+    <cfreturn arr>
 </cffunction>
 
 </cfcomponent>
