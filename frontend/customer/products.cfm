@@ -313,6 +313,60 @@ function buyNow(product_id, price){
     $("#buyModal").modal("show");
 }
 
+function openCouponModal() {
+
+    $("#couponModal").modal("show");
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getCouponsForProduct",
+        data: { product_id: SELECTED_PRODUCT_ID },
+        dataType: "json",
+
+        success: function(res) {
+
+            let data = res.DATA;
+            let html = "";
+
+            if (!data || data.length === 0) {
+                html = `
+                    <div class="alert alert-info text-center">
+                        No coupons available for this product.
+                    </div>
+                `;
+            } else {
+                data.forEach(c => {
+                    html += `
+                        <div class="border p-2 mb-2">
+                            <h6 class="fw-bold text-uppercase mb-2 text-primary">
+                                ${c.TITLE}
+                            </h6>
+
+                            Discount: Rs.${c.DISCOUNT_AMOUNT}
+
+                            <br><br>
+
+                            <button class="btn btn-sm btn-primary"
+                                onclick="applyCoupon(${c.DISCOUNT_AMOUNT}, ${c.MIN_AMOUNT})">
+                                Apply
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            $("#couponList").html(html);
+        },
+
+        error: function() {
+            $("#couponList").html(`
+                <div class="alert alert-danger text-center">
+                    Failed to load coupons.
+                </div>
+            `);
+        }
+    });
+}
+
 
 $("#confirmBuyBtn").on("click", function(){
 
