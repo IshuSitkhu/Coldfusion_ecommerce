@@ -59,19 +59,3 @@ function openCouponModal(){
         }
     });
 }
-
-function applyCoupon(discount, minAmount){
-
-    if(PRODUCT_PRICE < minAmount){
-        alert("Not eligible for this coupon");
-        return;
-    }
-
-    DISCOUNT = discount;
-    FINAL_PRICE = PRODUCT_PRICE - DISCOUNT;
-
-    $("#mDiscount").text(DISCOUNT);
-    $("#mFinal").text(FINAL_PRICE);
-
-    $("#couponModal").modal("hide");
-}
