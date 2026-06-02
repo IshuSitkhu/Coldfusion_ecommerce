@@ -100,6 +100,37 @@
 
 </cffunction>
 
+<cffunction name="adminUpdateProduct" access="remote" returntype="struct" returnformat="json">
+
+    <cfargument name="product_id" required="true">
+    <cfargument name="name" required="true">
+    <cfargument name="category" required="true">
+    <cfargument name="price" required="true">
+    <cfargument name="stock" required="true">
+    <cfargument name="description" required="true">
+
+    <cfset var result = {}>
+
+    <cfquery datasource="ecommerce">
+        UPDATE products
+        SET
+            product_name = <cfqueryparam value="#arguments.name#" cfsqltype="cf_sql_varchar">,
+            category = <cfqueryparam value="#arguments.category#" cfsqltype="cf_sql_varchar">,
+            price = <cfqueryparam value="#arguments.price#" cfsqltype="cf_sql_decimal">,
+            stock = <cfqueryparam value="#arguments.stock#" cfsqltype="cf_sql_integer">,
+            description = <cfqueryparam value="#arguments.description#" cfsqltype="cf_sql_varchar">
+        WHERE product_id =
+            <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+    </cfquery>
+
+    <cfset result.status=true>
+    <cfset result.message="Product updated successfully">
+    <cfset result.detail=cfcatch.detail>
+
+    <cfreturn result>
+
+</cffunction>
+
 
 <cffunction name="getMyProducts" access="remote" returntype="struct" returnformat="json">
             <cfset var result = {}>
@@ -212,6 +243,7 @@
                 p.price,
                 p.stock,
                 p.status,
+                p.description,
                 p.created_at,
                 p.seller_id,
                 u.username AS seller_name
@@ -234,7 +266,6 @@
                 <cfset includeRow = false>
             </cfif>
 
-            <!--- STATUS FILTER --->
             <cfif arguments.filter EQ "active" AND qProducts.status NEQ "active">
                 <cfset includeRow = false>
             </cfif>
@@ -256,6 +287,7 @@
                     stock = qProducts.stock,
                     status = qProducts.status,
                     seller_name = qProducts.seller_name,
+                    description = qProducts.description,
                     created_at = qProducts.created_at
                 })>
             </cfif>

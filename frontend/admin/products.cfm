@@ -403,6 +403,8 @@ function loadStats(){
 
 function editProduct(id, name, category, price, stock, description){
 
+    console.log("EDIT DATA:", {id, name, category, price, stock, description});
+
     $("#product_id").val(id);
     $("input[name='name']").val(name);
     $("select[name='category']").val(category);
@@ -411,6 +413,9 @@ function editProduct(id, name, category, price, stock, description){
     $("textarea[name='description']").val(description);
 
     $("#formBtn").text("Update Product");
+
+    let modal = new bootstrap.Modal(document.getElementById('productModal'));
+    modal.show();
 }
 
 function deleteProduct(id){
@@ -458,7 +463,7 @@ $(document).ready(function(){
 
     let url = (id === "" || id === null)
         ? "/ecommerce/api/Product.cfc?method=addProduct"
-        : "/ecommerce/api/Product.cfc?method=updateProduct";
+        : "/ecommerce/api/Product.cfc?method=adminUpdateProduct";
 
     $.ajax({
         url: url,
@@ -569,7 +574,7 @@ $(document).ready(function(){
 
             <input type="hidden" id="product_id" name="product_id">
 
-            <button type="submit" id="formBtn" class="btn btn-primary w-100">
+            <button type="submit" id="formBtn" class="btn btn-success">
                 Add Product
             </button>
 
