@@ -254,13 +254,26 @@ function loadProducts() {
 
                 console.log("ROW ITEM:", item);
 
-                let btn = "";
+                let statusBtn = "";
 
                 if (item.STATUS === "active") {
-                    btn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Disable</button>`;
+                    statusBtn = `<button class="btn btn-warning btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Disable</button>`;
                 } else {
-                    btn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Enable</button>`;
+                    statusBtn = `<button class="btn btn-success btn-sm" onclick="toggleStatus(${item.PRODUCT_ID})">Enable</button>`;
                 }
+
+                let btn = `
+                    <button class="btn btn-sm btn-primary" onclick="editProduct(
+                                ${item.PRODUCT_ID},
+                                '${item.PRODUCT_NAME}',
+                                '${item.CATEGORY}',
+                                ${item.PRICE},
+                                ${item.STOCK},
+                                '${item.DESCRIPTION || ""}'
+                            )">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteProduct(${item.PRODUCT_ID})">Delete</button>
+                    ${statusBtn}
+                `;
 
                 rows += `
                     <tr>
@@ -407,9 +420,29 @@ function deleteProduct(id){
         type: "POST",
         data: { product_id: id },
         dataType: "json",
+
         success: function(res){
+
+            if(res.STATUS || res.status){
+                Swal.fire({
+                    icon:'success',
+                    title:'Success',
+                    text: res.MESSAGE || res.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                })
+            }
             loadProducts();
             loadStats();
+        },
+        error: function(){
+
+            Swal.fire({
+                    icon: 'error',
+                    title: 'Failed',
+                    text: res.MESSAGE || res.message
+                });
+
         }
     });
 
