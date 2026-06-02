@@ -208,41 +208,55 @@ function loadProducts(){
                 <div class="col-md-4 mb-4">
                     <div class="card product-card shadow-sm border-0 h-100">
 
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="fw-bold mb-1 text-truncate">
-                                    ${p.PRODUCT_NAME}
-                                </h6>
+                        <div class="card-body d-flex flex-column">
 
-                                <div class="small text-muted mb-1">
-                                    <i class="bi bi-person"></i> Seller: ${p.SELLER_NAME}
-                                </div>
+                            <h6 class="fw-bold text-truncate mb-2">
+                                ${p.PRODUCT_NAME}
+                            </h6>
 
-                                <div class="small text-muted">
-                                    <i class="bi bi-tag"></i> ${p.CATEGORY}
-                                </div>
-
-                                <div class="price mt-2">
-                                    Rs ${p.PRICE}
-                                </div>
+                            <!-- Meta Info -->
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-person"></i> ${p.SELLER_NAME}
                             </div>
-                            <div class="col-md-4 text-end">
-                                <button class="btn btn-dark btn-sm" onclick="ViewDescriptions(${p.PRODUCT_ID})">
-                                    View Description
+
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-tag"></i> ${p.CATEGORY}
+                            </div>
+
+                            <!-- Price -->
+                            <div class="fw-bold text-dark fs-5 mb-3">
+                                Rs ${p.PRICE}
+                            </div>
+
+                            <!-- Top Actions -->
+                            <div class="d-flex gap-2 mb-2">
+                                <button class="btn btn-dark btn-sm w-100"
+                                    onclick="ViewDescriptions(${p.PRODUCT_ID})">
+                                    Description
+                                </button>
+
+                                <button class="btn btn-primary btn-sm"
+                                    onclick="reviewProduct(${p.PRODUCT_ID}, this)">
+                                    Review Product
                                 </button>
                             </div>
+
+                            <!-- Bottom Actions -->
+                            <div class="mt-auto d-grid gap-2">
+
+                                <button class="btn btn-success btn-sm"
+                                    onclick="addToCart(${p.PRODUCT_ID})">
+                                    Add to Cart
+                                </button>
+
+                                <button class="btn btn-primary btn-sm"
+                                    onclick="buyNow(${p.PRODUCT_ID}, ${p.PRICE})">
+                                    Buy Now
+                                </button>
+
+                            </div>
+
                         </div>
-                    <div>
-                        <button class="btn btn-primary btn-sm" onclick="addToCart(${p.PRODUCT_ID})">
-                            Add to Cart
-                        </button>
-
-                        <button class="btn btn-success btn-sm" onclick="buyNow(${p.PRODUCT_ID}, ${p.PRICE})">
-                            Buy Now
-                        </button>
-                    </div>
-                    
-
                     </div>
                 </div>
                 `;
@@ -256,6 +270,41 @@ function loadProducts(){
         error: function(xhr){
             console.log("PRODUCT API ERROR:", xhr.responseText);
             $("#productGrid").html(`<div class="text-danger text-center">Server Error</div>`);
+        }
+    });
+}
+
+function reviewProduct(product_id){
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=addReview",
+        type: "POST",
+        dataType: "json",
+        data: {
+            product_id: product_id
+        },
+
+        success: function(res){
+
+            console.log("SUCCESS RESPONSE:", res);
+
+            Swal.fire({
+                icon: res.STATUS ? "success" : "info",
+                title: res.STATUS ? "Success" : "Notice",
+                text: res.MESSAGE
+            });
+
+        },
+
+        error: function(xhr){
+
+            console.log("ERROR RESPONSE:", xhr.responseText);
+
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Server error occurred"
+            });
         }
     });
 }
