@@ -205,24 +205,33 @@ function loadProducts(){
                 console.log("PRODUCT ITEM:", p);
 
                 html += `
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-4">
                     <div class="card product-card shadow-sm border-0 h-100">
 
-                        <h6 class="fw-bold mb-1 text-truncate">
-                            ${p.PRODUCT_NAME}
-                        </h6>
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="fw-bold mb-1 text-truncate">
+                                    ${p.PRODUCT_NAME}
+                                </h6>
 
-                        <div class="small text-muted mb-1">
-                            <i class="bi bi-person"></i> Seller: ${p.SELLER_NAME}
+                                <div class="small text-muted mb-1">
+                                    <i class="bi bi-person"></i> Seller: ${p.SELLER_NAME}
+                                </div>
+
+                                <div class="small text-muted">
+                                    <i class="bi bi-tag"></i> ${p.CATEGORY}
+                                </div>
+
+                                <div class="price mt-2">
+                                    Rs ${p.PRICE}
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button class="btn btn-dark btn-sm" onclick="ViewDescriptions(${p.PRODUCT_ID})">
+                                    View Description
+                                </button>
+                            </div>
                         </div>
-
-                        <div class="small text-muted">
-                            <i class="bi bi-tag"></i> ${p.CATEGORY}
-                        </div>
-
-                    <div class="price mt-2">
-                        Rs ${p.PRICE}
-                    </div>
                     <div>
                         <button class="btn btn-primary btn-sm" onclick="addToCart(${p.PRODUCT_ID})">
                             Add to Cart
@@ -290,6 +299,51 @@ $("#resetBtn").on("click", function(){
 
     loadProducts();
 });
+
+function ViewDescriptions(product_id) {
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=getProductDescription",
+        type: "GET",
+        data: {
+            product_id: product_id
+        },
+        dataType: "json",
+
+        success: function(res) {
+
+            let data = res.DATA || res.data;
+
+            if (data && data.COLUMNS && data.DATA) {
+                let cols = data.COLUMNS;
+                let rows = data.DATA;
+
+                data = rows.map(r => {
+                    let obj = {};
+                    cols.forEach((c, i) => obj[c] = r[i]);
+                    return obj;
+                });
+            }
+
+            if (!data || data.length === 0) {
+                $("#pdDescription").text("No description available");
+                $("#productDetailModal").modal("show");
+                return;
+            }
+
+            let p = data[0];
+
+            $("#pdDescription").text(p.DESCRIPTION || "No description available");
+
+            $("#productDetailModal").modal("show");
+        },
+
+        error: function() {
+            $("#pdDescription").text("Failed to load description");
+            $("#productDetailModal").modal("show");
+        }
+    });
+}
 
 let PRODUCT_PRICE = 0;
 let SELECTED_PRODUCT_ID = 0;
@@ -430,40 +484,40 @@ function confirmBuy() {
             final_price: FINAL_PRICE
         },
 
-success: function(res) {
+        success: function(res) {
 
-    console.log("Raw Response:", res);
-    console.log("TYPE:", typeof res);
+            console.log("Raw Response:", res);
+            console.log("TYPE:", typeof res);
 
-    if (typeof res === "string") {
-        res = JSON.parse(res);
-    }
+            if (typeof res === "string") {
+                res = JSON.parse(res);
+            }
 
-    console.log("Parsed:", res);
-    console.log("STATUS:", res.STATUS);
+            console.log("Parsed:", res);
+            console.log("STATUS:", res.STATUS);
 
-    $("#buyModal").modal("hide");
+            $("#buyModal").modal("hide");
 
-    if (res.STATUS === true) {
+            if (res.STATUS === true) {
 
-        Swal.fire({
-            icon: "success",
-            title: "Purchase Successful!",
-            text: res.MESSAGE
-        }).then(() => {
-            window.location = "../customer/purchaseHistory.cfm";
-        });
+                Swal.fire({
+                    icon: "success",
+                    title: "Purchase Successful!",
+                    text: res.MESSAGE
+                }).then(() => {
+                    window.location = "../customer/purchaseHistory.cfm";
+                });
 
-    } else {
+            } else {
 
-        Swal.fire({
-            icon: "error",
-            title: "Purchase Failed",
-            text: res.MESSAGE || "Something went wrong."
-        });
+                Swal.fire({
+                    icon: "error",
+                    title: "Purchase Failed",
+                    text: res.MESSAGE || "Something went wrong."
+                });
 
-    }
-},
+            }
+        },
 
         error: function(xhr, status, error) {
 
@@ -614,6 +668,23 @@ function addToCart(product_id){
       <div class="modal-body">
       <h4>Available coupons for you.</h4> 
         <div id="couponList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="productDetailModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Product Description</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p id="pdDescription" class="mb-0">Loading...</p>
       </div>
 
     </div>

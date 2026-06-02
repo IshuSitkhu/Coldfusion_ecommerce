@@ -500,6 +500,37 @@
 
 </cffunction>
 
+<cffunction name="getProductDescription" access="remote" returntype="struct" returnformat="json">
+    <cfargument name="product_id" required="true">
+
+    <cfset var result = {}>
+    
+    <cftry>
+
+        <cfquery name="q" datasource="ecommerce">
+            SELECT 
+                product_id,
+                product_name,
+                category,
+                price,
+                description
+            FROM products
+            WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+
+        <cfset result.STATUS = true>
+        <cfset result.DATA = q>
+
+        <cfcatch>
+            <cfset result.STATUS = false>
+            <cfset result.MESSAGE = cfcatch.message>
+        </cfcatch>
+
+    </cftry>
+
+    <cfreturn result>
+</cffunction>
+
 <cffunction name="addToCart" access="remote" returntype="struct" returnformat="json">
 
     <cfargument name="user_id" required="true">
