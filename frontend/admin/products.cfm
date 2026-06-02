@@ -7,6 +7,7 @@
     <title>Admin Products</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -75,6 +76,11 @@
             <select id="sellerFilter" class="form-select form-select-sm w-auto ms-auto">
                 <option value="">Filter by Seller</option>
             </select>
+            <div>
+                <button type="button" class="btn btn-dark" id="AddProduct" data-bs-toggle="modal" data-bs-target="#productModal">
+                    Add Products
+                </button>
+            </div>
 
         </div>
 
@@ -283,6 +289,15 @@ function loadProducts() {
 }
 
 
+$("#AddProduct").on("click", function () {
+    console.log("Added Button CLiclked");
+
+    $("#productForm")[0].reset();
+    $("#product_id").val("");
+    $("#formBtn").text("Add Product");
+
+});
+
 function setFilter(filter){
     currentFilter = filter;
     updateTableTitle();
@@ -300,7 +315,6 @@ $("#sellerFilter").on("select2:select select2:clear", function () {
     updateTableTitle();
     loadProducts();
 });
-
 
 function toggleStatus(id){
 
@@ -374,7 +388,107 @@ function loadStats(){
     });
 }
 
+function editProduct(id, name, category, price, stock, description){
+
+    $("#product_id").val(id);
+    $("input[name='name']").val(name);
+    $("select[name='category']").val(category);
+    $("input[name='price']").val(price);
+    $("input[name='stock']").val(stock);
+    $("textarea[name='description']").val(description);
+
+    $("#formBtn").text("Update Product");
+}
+
+function deleteProduct(id){
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=deleteProduct",
+        type: "POST",
+        data: { product_id: id },
+        dataType: "json",
+        success: function(res){
+            loadProducts();
+            loadStats();
+        }
+    });
+
+}
+
 $(document).ready(function(){
+
+    $("#productForm").submit(function(e){
+    e.preventDefault();
+    console.log("FORM SUBMIT FIRED ");
+
+    let id = $("#product_id").val();
+
+    let url = (id === "" || id === null)
+        ? "/ecommerce/api/Product.cfc?method=addProduct"
+        : "/ecommerce/api/Product.cfc?method=updateProduct";
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "json",
+
+        success: function(res){
+
+            console.log("ADD/UPDATE RESPONSE:", res);
+
+            let status = res.status ?? res.STATUS;
+            let message = res.message ?? res.MESSAGE;
+
+            if(status){
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message || "Saved successfully",
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            let modalEl = document.getElementById('productModal');
+            let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
+
+            setTimeout(function () {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            }, 300);
+
+            $("#productForm")[0].reset();
+            $("#product_id").val("");
+            $("#formBtn").text("Add Product");
+
+            loadProducts();
+            loadStats();
+
+                        } else {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: message || "Something went wrong"
+                            });
+                        }
+                    },
+
+                    error: function(xhr){
+                        console.log("AJAX ERROR:", xhr.responseText);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Server Error',
+                            text: 'Check console for details'
+                        });
+                    }
+                });
+            });
+
     loadSellers();
     updateTableTitle();
     loadProducts(); 
@@ -388,7 +502,51 @@ $(document).ready(function(){
 });
 
 
+
+
 </script>
+
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Add Product</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <form id="productForm">
+
+            <input type="text" name="name" class="form-control mb-2" placeholder="Product Name" required>
+
+            <select name="category" class="form-control mb-2" required>
+                <option value="">Select Category</option>
+                <option value="accessories">Accessories</option>
+                <option value="electronic">Electronic</option>
+                <option value="cloth">Cloth</option>
+            </select>
+
+            <input type="number" name="price" class="form-control mb-2" placeholder="Price" required>
+
+            <input type="number" name="stock" class="form-control mb-2" placeholder="Stock" required>
+
+            <textarea name="description" class="form-control mb-2" placeholder="Description"></textarea>
+
+            <input type="hidden" id="product_id" name="product_id">
+
+            <button type="submit" id="formBtn" class="btn btn-primary w-100">
+                Add Product
+            </button>
+
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
