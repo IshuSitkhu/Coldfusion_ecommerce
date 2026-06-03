@@ -170,59 +170,109 @@
 
 </cffunction>
 
-<cffunction name="addReview" access="remote" returntype="void" output="true">
+<cffunction name="addReview"
+    access="remote"
+    returntype="struct"
+    returnformat="json">
 
     <cfargument name="product_id" type="numeric" required="true">
+    <cfargument name="review_value" type="numeric" required="true">
 
-    <cfset var result = {STATUS=false, MESSAGE=""}>
+    <cfset var result = {STATUS=false, MESSAGE="", DEBUG={}}>
     <cfset var user_id = session.user_id>
 
     <cftry>
-
         <cfquery name="checkReview" datasource="ecommerce">
-            SELECT review_id
+            SELECT review_id, review_value
             FROM product_reviews
             WHERE product_id = <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">
             AND user_id = <cfqueryparam value="#user_id#" cfsqltype="cf_sql_integer">
         </cfquery>
 
+        <cfset result.DEBUG.checkCount = checkReview.recordCount>
+        <cfset result.DEBUG.product_id = arguments.product_id>
+        <cfset result.DEBUG.user_id = user_id>
+        <cfset result.DEBUG.new_value = arguments.review_value>
+        
         <cfif checkReview.recordCount GT 0>
 
-            <cfset result.STATUS = false>
-            <cfset result.MESSAGE = "You already reviewed this product">
+            <cfset result.DEBUG.old_value = checkReview.review_value>
+            <cfif checkReview.review_value EQ arguments.review_value>
+
+                <cfif arguments.review_value EQ 1>
+                    <cfset result.STATUS = false>
+                    <cfset result.MESSAGE = "You already gave a positive review">
+                <cfelse>
+                    <cfset result.STATUS = false>
+                    <cfset result.MESSAGE = "You already gave a negative review">
+                </cfif>
+
+            <cfelse>
+
+                <cfquery name="updateReview" datasource="ecommerce">
+                    UPDATE product_reviews
+                    SET review_value = <cfqueryparam value="#arguments.review_value#" cfsqltype="cf_sql_integer">
+                    WHERE review_id = <cfqueryparam value="#checkReview.review_id#" cfsqltype="cf_sql_integer">
+                </cfquery>
+
+                <cfquery name="testSelect" datasource="ecommerce">
+                    SELECT review_value
+                    FROM product_reviews
+                    WHERE review_id = <cfqueryparam value="#checkReview.review_id#" cfsqltype="cf_sql_integer">
+                </cfquery>
+
+                <cfset result.DEBUG.after_update_check = testSelect.review_value>
+
+                <cfif arguments.review_value EQ 1>
+                    <cfset result.MESSAGE = "Changed to positive review successfully">
+                <cfelse>
+                    <cfset result.MESSAGE = "Changed to negative review successfully">
+                </cfif>
+
+                <cfset result.STATUS = true>
+
+            </cfif>
 
         <cfelse>
 
-            <cfquery datasource="ecommerce">
-                INSERT INTO product_reviews (product_id, user_id, is_reviewed)
-                VALUES (
+            <cfquery name="insertReview" datasource="ecommerce">
+                INSERT INTO product_reviews
+                (
+                    product_id,
+                    user_id,
+                    review_value,
+                    created_at
+                )
+                VALUES
+                (
                     <cfqueryparam value="#arguments.product_id#" cfsqltype="cf_sql_integer">,
                     <cfqueryparam value="#user_id#" cfsqltype="cf_sql_integer">,
-                    1
+                    <cfqueryparam value="#arguments.review_value#" cfsqltype="cf_sql_integer">,
+                    GETDATE()
                 )
             </cfquery>
 
+            <cfif arguments.review_value EQ 1>
+                <cfset result.MESSAGE = "Positive review added successfully">
+            <cfelse>
+                <cfset result.MESSAGE = "Negative review added successfully">
+            </cfif>
+
             <cfset result.STATUS = true>
-            <cfset result.MESSAGE = "Thanks! Review recorded">
 
         </cfif>
 
-        <cfcatch>
-            <cfset result.STATUS = false>
-            <cfset result.MESSAGE = cfcatch.message>
-        </cfcatch>
+    <cfcatch>
+        <cfset result.STATUS = false>
+        <cfset result.MESSAGE = cfcatch.message>
+        <cfset result.DEBUG.error = cfcatch.detail>
+    </cfcatch>
 
     </cftry>
 
-    <!--- CRITICAL FIX --->
-    <cfcontent type="application/json" reset="true">
-    <cfoutput>#serializeJSON(result)#</cfoutput>
-    <cfabort>
+    <cfreturn result>
 
 </cffunction>
-
-
-
 
 <cffunction name="deleteProduct" access="remote" returntype="struct" returnformat="json">
 
@@ -495,7 +545,6 @@
                 p.stock,
                 p.status,
                 p.seller_id,
-                p.total_reviews,
                 u.username AS seller_name
             FROM products p
             INNER JOIN users u
@@ -524,7 +573,6 @@
                 stock = qProducts.stock,
                 status = qProducts.status,
                 seller_id = qProducts.seller_id,
-                total_reviews=qProduct.total_reviews,
                 seller_name = qProducts.seller_name
             })>
 

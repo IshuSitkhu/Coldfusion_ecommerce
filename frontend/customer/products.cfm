@@ -235,9 +235,14 @@ function loadProducts(){
                                     Description
                                 </button>
 
-                                <button class="btn btn-primary btn-sm"
+                                <button class="btn btn-outline-success btn-sm w-30 d-flex align-items-center justify-content-center gap-1"
                                     onclick="reviewProduct(${p.PRODUCT_ID}, this)">
-                                    Review Product
+                                    Positive
+                                </button>
+
+                                <button class="btn btn-outline-danger btn-sm w-30 d-flex align-items-center justify-content-center gap-1"
+                                    onclick="negativeReview(${p.PRODUCT_ID}, this)">
+                                    Negative
                                 </button>
                             </div>
 
@@ -281,12 +286,11 @@ function reviewProduct(product_id){
         type: "POST",
         dataType: "json",
         data: {
-            product_id: product_id
+            product_id: product_id,
+            review_value: 1
         },
 
         success: function(res){
-
-            console.log("SUCCESS RESPONSE:", res);
 
             Swal.fire({
                 icon: res.STATUS ? "success" : "info",
@@ -297,14 +301,34 @@ function reviewProduct(product_id){
         },
 
         error: function(xhr){
+            Swal.fire("Error", "Server error", "error");
+        }
+    });
+}
 
-            console.log("ERROR RESPONSE:", xhr.responseText);
+function negativeReview(product_id){
+
+    $.ajax({
+        url: "/ecommerce/api/Product.cfc?method=addReview",
+        type: "POST",
+        dataType: "json",
+        data: {
+            product_id: product_id,
+            review_value: -1
+        },
+
+        success: function(res){
 
             Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Server error occurred"
+                icon: res.STATUS ? "success" : "info",
+                title: res.STATUS ? "Success" : "Notice",
+                text: res.MESSAGE
             });
+
+        },
+
+        error: function(){
+            Swal.fire("Error", "Server error", "error");
         }
     });
 }
