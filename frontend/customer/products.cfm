@@ -209,23 +209,40 @@ function loadProducts(){
                     <div class="card product-card shadow-sm border-0 h-100">
 
                         <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start">
 
-                            <h6 class="fw-bold text-truncate mb-2">
-                                ${p.PRODUCT_NAME}
-                            </h6>
+   
+                                <div>
+                                    <h6 class="fw-bold text-truncate mb-2">
+                                        ${p.PRODUCT_NAME}
+                                    </h6>
 
-                            <!-- Meta Info -->
-                            <div class="small text-muted mb-1">
-                                <i class="bi bi-person"></i> ${p.SELLER_NAME}
-                            </div>
+                                    <div class="small text-muted mb-1">
+                                        <i class="bi bi-person"></i> ${p.SELLER_NAME}
+                                    </div>
 
-                            <div class="small text-muted mb-2">
-                                <i class="bi bi-tag"></i> ${p.CATEGORY}
-                            </div>
+                                    <div class="small text-muted mb-2">
+                                        <i class="bi bi-tag"></i> ${p.CATEGORY}
+                                    </div>
 
-                            <!-- Price -->
-                            <div class="fw-bold text-dark fs-5 mb-3">
-                                Rs ${p.PRICE}
+                                    <div class="fw-bold text-dark fs-5 mb-3">
+                                        Rs ${p.PRICE}
+                                    </div>
+                                </div>
+
+                                <!-- RIGHT SIDE -->
+                                <div class="text-end">
+                                    <div class="small mb-2">
+                                        <span class="text-success d-block">
+                                            Total Positive review ${p.TOTAL_POSITIVE || 0}
+                                        </span>
+
+                                        <span class="text-danger d-block">
+                                            Total Negative Review ${p.TOTAL_NEGATIVE || 0}
+                                        </span>
+                                    </div>
+                                </div>
+
                             </div>
 
                             <!-- Top Actions -->
@@ -297,12 +314,13 @@ function reviewProduct(product_id){
                 title: res.STATUS ? "Success" : "Notice",
                 text: res.MESSAGE
             });
-
+                loadProducts();
         },
 
         error: function(xhr){
             Swal.fire("Error", "Server error", "error");
         }
+         
     });
 }
 
@@ -324,6 +342,7 @@ function negativeReview(product_id){
                 title: res.STATUS ? "Success" : "Notice",
                 text: res.MESSAGE
             });
+            loadProducts();
 
         },
 

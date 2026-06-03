@@ -193,7 +193,7 @@
         <cfset result.DEBUG.product_id = arguments.product_id>
         <cfset result.DEBUG.user_id = user_id>
         <cfset result.DEBUG.new_value = arguments.review_value>
-        
+
         <cfif checkReview.recordCount GT 0>
 
             <cfset result.DEBUG.old_value = checkReview.review_value>
@@ -545,10 +545,19 @@
                 p.stock,
                 p.status,
                 p.seller_id,
-                u.username AS seller_name
+                u.username AS seller_name,
+
+                ISNULL(SUM(CASE WHEN pr.review_value = 1 THEN 1 ELSE 0 END), 0) AS total_positive,
+
+                ISNULL(SUM(CASE WHEN pr.review_value = -1 THEN 1 ELSE 0 END), 0) AS total_negative
+
             FROM products p
             INNER JOIN users u
                 ON p.seller_id = u.user_id
+
+            LEFT JOIN product_reviews pr
+                ON p.product_id = pr.product_id
+
             WHERE p.status = 'active'
 
             <cfif arguments.category NEQ "">
@@ -559,6 +568,15 @@
                 AND p.seller_id = <cfqueryparam value="#arguments.seller_id#" cfsqltype="cf_sql_integer">
             </cfif>
 
+            GROUP BY 
+                p.product_id,
+                p.product_name,
+                p.category,
+                p.price,
+                p.stock,
+                p.status,
+                p.seller_id,
+                u.username
         </cfquery>
 
         <cfset var data = []>
@@ -573,7 +591,10 @@
                 stock = qProducts.stock,
                 status = qProducts.status,
                 seller_id = qProducts.seller_id,
-                seller_name = qProducts.seller_name
+                seller_name = qProducts.seller_name,
+
+                total_positive = qProducts.total_positive,
+                total_negative = qProducts.total_negative
             })>
 
         </cfloop>
@@ -583,11 +604,9 @@
         <cfset result.count = arrayLen(data)>
 
     <cfcatch>
-
         <cfset result.status = false>
         <cfset result.message = cfcatch.message>
         <cfset result.detail = cfcatch.detail>
-
     </cfcatch>
 
     </cftry>
