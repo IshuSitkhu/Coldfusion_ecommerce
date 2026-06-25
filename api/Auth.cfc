@@ -12,6 +12,8 @@
 
     <cfset var result = {}>
 
+    <cfset var userLog = ExpandPath("../logs/user_activity.log")>
+
     <cfset arguments.first_name = trim(arguments.first_name)>
     <cfset arguments.last_name = trim(arguments.last_name)>
     <cfset arguments.username = trim(arguments.username)>
@@ -58,6 +60,18 @@
 
     <cfif NOT REFind("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$", arguments.password)>
 
+        <cflog
+            file="user_activity"
+            text="REGISTRATION FAILED | Weak password | Email=#arguments.email#"
+            type="warning">
+
+        <cffile
+            action="append"
+            file="#userLog#"
+            output="#Now()# | REGISTRATION FAILED | Weak password | Email=#arguments.email##chr(13)##chr(10)#">
+
+        <cfset result.status = false>
+
         <cfset result.status = false>
         <cfset result.message = "Password must be 8+ chars with uppercase, lowercase, number & special character">
         <cfreturn result>
@@ -74,10 +88,21 @@
         </cfquery>
 
         <cfif checkEmail.recordCount GT 0>
-            <cfset result.status = false>
-            <cfset result.message = "Email already exists">
-            <cfreturn result>
-        </cfif>
+
+            <cflog
+                file="user_activity"
+                text="REGISTRATION FAILED | Email already exists | Email=#arguments.email#"
+                type="warning">
+
+            <cffile
+                action="append"
+                file="#userLog#"
+                output="#Now()# | REGISTRATION FAILED | Email already exists | Email=#arguments.email##chr(13)##chr(10)#">
+
+                <cfset result.status = false>
+                <cfset result.message = "Email already exists">
+                <cfreturn result>
+            </cfif>
 
         <cfquery name="checkUsername" datasource="ecommerce">
             SELECT user_id 
@@ -86,6 +111,17 @@
         </cfquery>
 
         <cfif checkUsername.recordCount GT 0>
+
+            <cflog
+                file="user_activity"
+                text="REGISTRATION FAILED | Username already exists | Username=#arguments.username#"
+                type="warning">
+
+            <cffile
+                action="append"
+                file="#userLog#"
+                output="#Now()# | REGISTRATION FAILED | Username already exists | Username=#arguments.username##chr(13)##chr(10)#">
+
             <cfset result.status = false>
             <cfset result.message = "Username already exists">
             <cfreturn result>
@@ -117,12 +153,35 @@
             )
         </cfquery>
 
+        <cflog
+            file="user_activity"
+            text="REGISTRATION | Username=#arguments.username# | Email=#arguments.email# | Role=#arguments.role#"
+            type="information">
+
+        <!-- log -->
+        <cffile
+            action="append"
+            file="#userLog#"
+            output="#Now()# | REGISTRATION | Username=#arguments.username# | Email=#arguments.email# | Role=#arguments.role##chr(13)##chr(10)#">
+
         <cfset result.status = true>
         <cfset result.message = "Registration successful">
 
         <cfcatch>
+
+            <cflog
+                file="user_activity"
+                text="SERVER ERROR | #cfcatch.message#"
+                type="error">
+
+            <cffile
+                action="append"
+                file="#userLog#"
+                output="#Now()# | SERVER ERROR | #cfcatch.message##chr(13)##chr(10)#">
+
             <cfset result.status = false>
             <cfset result.message = "Server error: " & cfcatch.message>
+
         </cfcatch>
 
     </cftry>
@@ -138,6 +197,8 @@
 
     <cfset var result = {}>
 
+    <cfset var userLog = ExpandPath("../logs/user_activity.log")>
+
     <cfif trim(arguments.email) EQ "" OR trim(arguments.password) EQ "">
         <cfset result.status = false>
         <cfset result.message = "Email and password required">
@@ -151,27 +212,73 @@
     </cfquery>
 
     <cfif getUser.recordCount EQ 0>
+
+        <cflog
+            file="user_activity"
+            text="LOGIN FAILED | Email not found | Email=#arguments.email#"
+            type="warning">
+
+        <cffile
+            action="append"
+            file="#userLog#"
+            output="#Now()# | LOGIN FAILED | Email not found | Email=#arguments.email##chr(13)##chr(10)#">
+
         <cfset result.status = false>
         <cfset result.message = "Invalid email or password">
         <cfreturn result>
+
     </cfif>
 
     <cfif getUser.password NEQ arguments.password>
+
+        <cflog
+            file="user_activity"
+            text="LOGIN FAILED | Wrong password | User=#getUser.username#"
+            type="warning">
+
+        <cffile
+            action="append"
+            file="#userLog#"
+            output="#Now()# | LOGIN FAILED | Wrong password | User=#getUser.username##chr(13)##chr(10)#">
+
         <cfset result.status = false>
         <cfset result.message = "Invalid email or password">
         <cfreturn result>
+
     </cfif>
 
     <cfif getUser.status NEQ "active">
+
+        <cflog
+            file="user_activity"
+            text="LOGIN BLOCKED | Inactive account | User=#getUser.username#"
+            type="warning">
+
+        <cffile
+            action="append"
+            file="#userLog#"
+            output="#Now()# | LOGIN BLOCKED | Inactive account | User=#getUser.username##chr(13)##chr(10)#">
+
         <cfset result.status = false>
         <cfset result.message = "Account is inactive">
         <cfreturn result>
+
     </cfif>
 
 
     <cfset session.user_id = getUser.user_id>
     <cfset session.username = getUser.username>
     <cfset session.role = getUser.role>
+
+    <cflog
+        file="user_activity"
+        text="LOGIN SUCCESS | UserID=#getUser.user_id# | Username=#getUser.username# | Role=#getUser.role#"
+        type="information">
+
+    <cffile
+        action="append"
+        file="#userLog#"
+        output="#Now()# | LOGIN SUCCESS | User=#getUser.username# | Role=#getUser.role##chr(13)##chr(10)#">
 
 
     <cfset result.status = true>
@@ -183,6 +290,18 @@
 </cffunction>
 
 <cffunction name="logout" access="remote" returntype="struct" returnformat="json">
+
+    <cfset var userLog = ExpandPath("../logs/user_activity.log")>
+
+    <cflog
+        file="user_activity"
+        text="LOGOUT | UserID=#session.user_id# | Username=#session.username#"
+        type="information">
+
+    <cffile
+        action="append"
+        file="#userLog#"
+        output="#Now()# | LOGOUT | User=#session.username##chr(13)##chr(10)#">
 
     <cfset structClear(session)>
 

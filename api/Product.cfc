@@ -10,6 +10,8 @@
 
     <cfset var result = {}>
 
+    <cfset var productLog = ExpandPath("../logs/product_activity.log")>
+
     <cftry>
 
         <cfif NOT structKeyExists(session, "user_id")>
